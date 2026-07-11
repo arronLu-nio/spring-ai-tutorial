@@ -31,12 +31,37 @@ return chatClient.prompt()
         .content();
 ```
 
+## 3. Prompt 模板
+
+当 Prompt 的结构固定、只有部分内容变化时，可以使用 `{变量名}` 定义模板，再通过 `param()` 注入变量：
+
+```java
+return chatClient.prompt()
+        .user(user -> user
+                // {topic} 是模板变量
+                .text("请用简单的中文解释 {topic}，并给出一个 Java 示例。")
+                // 运行时将 topic 的值填入模板
+                .param("topic", topic))
+        .call()
+        .content();
+```
+
+调用模板接口：
+
+```bash
+curl "http://localhost:8080/ai/prompt/template?topic=Flux%3CString%3E"
+```
+
+页面中选择“Prompt 模板模式”，也可以直接体验这个接口。
+
 ## system 和 user 的区别
 
 | 方法 | 作用 | 示例 |
 |---|---|---|
 | `system()` | 设定 AI 的角色和规则 | “你是一名 Java 老师” |
 | `user()` | 传入用户当前的问题 | “什么是 Flux？” |
+| `text()` | 定义带变量的 Prompt 文本 | “请解释 {topic}” |
+| `param()` | 给模板变量传入实际值 | `param("topic", topic)` |
 
 ## 练习
 
@@ -47,4 +72,3 @@ return chatClient.prompt()
 ```
 
 然后观察 AI 的回答风格有什么变化。
-

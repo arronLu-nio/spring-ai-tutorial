@@ -35,6 +35,7 @@
         <select id="mode-select" title="选择接口">
             <option value="chat">普通聊天（流式）</option>
             <option value="prompt">Prompt 教师模式</option>
+            <option value="template">Prompt 模板模式</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -73,12 +74,14 @@
             const mode = modeSelect.value;
             const endpoint = mode === 'prompt'
                 ? `/ai/prompt?question=${encodeURIComponent(question)}`
-                : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
+                : mode === 'template'
+                    ? `/ai/prompt/template?topic=${encodeURIComponent(question)}`
+                    : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
             // Prompt 接口是同步接口，直接显示完整文本。
-            if (mode === 'prompt') {
+            if (mode === 'prompt' || mode === 'template') {
                 answer.textContent = await response.text();
                 return;
             }

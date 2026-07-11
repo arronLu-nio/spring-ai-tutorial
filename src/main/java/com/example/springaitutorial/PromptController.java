@@ -26,5 +26,16 @@ public class PromptController {
                 // content：只提取回答中的文本内容
                 .content();
     }
-}
 
+    @GetMapping("/ai/prompt/template")
+    public String explainTopic(@RequestParam String topic) {
+        return chatClient.prompt()
+                // user 文本中的 {topic} 是模板变量
+                .user(user -> user
+                        .text("请用简单的中文解释 {topic}，并给出一个 Java 示例。")
+                        // param：在运行时把 topic 的值填入模板
+                        .param("topic", topic))
+                .call()                  // 同步等待完整回答
+                .content();              // 提取文本内容
+    }
+}

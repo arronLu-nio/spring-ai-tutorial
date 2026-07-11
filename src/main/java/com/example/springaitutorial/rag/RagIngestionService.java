@@ -12,6 +12,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,7 +57,8 @@ public class RagIngestionService {
         openSearch.ensureIndex();
 
         // 4. Tika 根据文件类型自动解析 PDF、Word、文本等文件，统一得到 Document。
-        List<Document> sourceDocuments = new TikaDocumentReader(target.toFile().getAbsolutePath()).get();
+        // String 构造方法会按 classpath 资源读取；这里使用 FileSystemResource 明确读取本地磁盘文件。
+        List<Document> sourceDocuments = new TikaDocumentReader(new FileSystemResource(target)).get();
         List<Document> chunks = new ArrayList<>();
         for (Document source : sourceDocuments) {
             // 5. 将长文档切成较小的片段，避免单次 Embedding 文本过长，也方便精准召回。

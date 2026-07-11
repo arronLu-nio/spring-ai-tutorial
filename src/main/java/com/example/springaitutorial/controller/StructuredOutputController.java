@@ -2,6 +2,7 @@ package com.example.springaitutorial.controller;
 
 import com.example.springaitutorial.model.JavaConcept;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,7 +13,10 @@ public class StructuredOutputController {
     private final ChatClient chatClient;
 
     public StructuredOutputController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClientBuilder
+                // 开发阶段打印结构化输出请求和响应
+                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .build();
     }
 
     @GetMapping("/ai/structured-output")

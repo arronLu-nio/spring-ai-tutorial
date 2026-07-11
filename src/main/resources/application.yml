@@ -12,3 +12,8 @@ spring:
 
 server:
   port: 8080
+
+# 开发环境：打印 ChatClient 发给模型的 Prompt 和模型返回的响应
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor: DEBUG

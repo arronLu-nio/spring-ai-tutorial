@@ -81,6 +81,8 @@ http://localhost:8080
 
 页面可以选择普通流式聊天或第二章的 Prompt 教师模式。
 
+服务端会在开发环境打印 ChatClient 发给模型的 Prompt 和模型返回的响应，日志级别配置在 `application.yml` 中。
+
 也可以使用命令行调用：
 
 同步返回完整结果：

@@ -1,6 +1,7 @@
 package com.example.springaitutorial.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,7 +14,10 @@ public class PromptController {
     private final ChatClient chatClient;
 
     public PromptController(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder.build();
+        this.chatClient = chatClientBuilder
+                // 开发阶段打印 Prompt 和模型响应
+                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .build();
     }
 
     @GetMapping("/ai/prompt")

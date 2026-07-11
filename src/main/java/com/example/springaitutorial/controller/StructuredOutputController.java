@@ -145,4 +145,26 @@ public class StructuredOutputController {
             ));
         }
     }
+
+    @GetMapping("/ai/structured-output/native")
+    public ResponseEntity<?> explainWithNativeOutput(@RequestParam String topic) {
+        try {
+            JavaConcept result = chatClient.prompt()
+                    .system("请用中文解释 Java 或 Spring 概念，内容要适合初学者。")
+                    .user("请解释这个概念：" + topic)
+                    .call()
+                    // 将 Schema 交给模型提供商的原生结构化输出能力；同时保留失败重试。
+                    .entity(JavaConcept.class, spec -> spec
+                            .useProviderStructuredOutput()
+                            .validateSchema());
+
+            return ResponseEntity.ok(result);
+        } catch (Exception exception) {
+            log.error("模型原生结构化输出失败，topic={}", topic, exception);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "NATIVE_STRUCTURED_OUTPUT_FAILED",
+                    "message", "当前模型可能不支持原生结构化输出，请尝试普通结构化输出模式"
+            ));
+        }
+    }
 }

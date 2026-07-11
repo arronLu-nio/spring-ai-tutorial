@@ -200,6 +200,31 @@ curl "http://localhost:8080/ai/structured-output/retry/custom?topic=Flux"
 
 重试次数不是越多越好。每次重试都会再次消耗模型调用次数和 Token，生产环境需要在可靠性和成本之间做平衡。
 
+## 6. 模型原生结构化输出
+
+前面的默认方式主要是把格式要求放进 Prompt。部分模型提供商支持更强的原生结构化输出，可以直接把 Schema 作为 API 参数传递：
+
+```java
+JavaConcept result = chatClient.prompt()
+        .user("请解释这个概念：" + topic)
+        .call()
+        .entity(JavaConcept.class, spec -> spec
+                // 交给模型提供商在 API 层约束输出格式
+                .useProviderStructuredOutput()
+                // 响应回来后继续做 Schema 校验和失败重试
+                .validateSchema());
+```
+
+调用接口：
+
+```bash
+curl "http://localhost:8080/ai/structured-output/native?topic=Flux"
+```
+
+页面中选择“模型原生结构化输出”即可体验。
+
+注意：原生结构化输出依赖具体模型和提供商的支持。如果接口不支持，可能会调用失败；这时使用普通的 `entity(JavaConcept.class)` 方式。
+
 ## 关键 API
 
 | API | 作用 |

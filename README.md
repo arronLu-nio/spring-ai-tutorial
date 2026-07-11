@@ -116,19 +116,19 @@ Spring Web Controller
 同步调用：
 
 ```java
-return chatClient.prompt()
-        .user(message)
-        .call()
-        .content();
+return chatClient.prompt()       // 创建模型请求
+        .user(message)           // 设置用户消息
+        .call()                  // 同步等待完整结果
+        .content();              // 提取完整文本
 ```
 
 流式调用：
 
 ```java
-return chatClient.prompt()
-        .user(message)
-        .stream()
-        .content();
+return chatClient.prompt()       // 创建模型请求
+        .user(message)           // 设置用户消息
+        .stream()                // 流式返回模型生成内容
+        .content();              // 得到 Flux<String>
 ```
 
 ## 📝 每章都会包含

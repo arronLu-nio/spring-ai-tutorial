@@ -17,7 +17,7 @@ public class CurrentTimeTool {
 
     @Tool(description = "查询指定时区的当前日期和时间")
     public String getCurrentTime(
-            @ToolParam(description = "Java 时区 ID，例如 Asia/Shanghai 或 UTC") String zoneId) {
+            @ToolParam(description = "Java 时区 ID，例如 Asia/Shanghai 或 UTC", required = true) String zoneId) {
         return LocalDateTime.now(ZoneId.of(zoneId)).format(FORMATTER);
     }
 }

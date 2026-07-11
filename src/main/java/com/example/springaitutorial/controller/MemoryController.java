@@ -12,6 +12,8 @@ import reactor.core.publisher.Flux;
 
 import com.example.springaitutorial.session.ConversationService;
 import com.example.springaitutorial.tool.CurrentTimeTool;
+import com.example.springaitutorial.tool.CalculatorTool;
+import com.example.springaitutorial.tool.JavaInfoTool;
 import com.example.springaitutorial.advisor.ToolMessageSavingAdvisor;
 import org.springframework.ai.chat.client.AdvisorParams;
 import org.springframework.ai.model.tool.ToolCallingManager;
@@ -46,7 +48,8 @@ public class MemoryController {
                 // system message：定义本次请求的角色和回答规则，每次请求都会重新加入
                 .system("你是一名耐心的 Java 和 Spring AI 老师，请使用简单的中文回答。")
                 // tools：让模型在多轮对话中也可以调用当前时间工具。
-                .tools(new CurrentTimeTool())
+                // 注册多个工具，模型会根据用户问题选择合适的工具。
+                .tools(new CurrentTimeTool(), new JavaInfoTool(), new CalculatorTool())
                 .advisors(advisorSpec -> advisorSpec
                         // 把记忆 Advisor 加入本次请求
                         .advisors(memoryAdvisor)

@@ -367,6 +367,26 @@ ASSISTANT（最终回答）
 
 因此可以在 Redis 中看到 `type: "TOOL"` 的 JSON 消息。工具消息会增加上下文长度，实际项目应根据需要决定是否持久化。
 
+## 13. 多工具调用与参数
+
+当前接口还注册了三个工具：
+
+```text
+CurrentTimeTool  → 查询指定时区的时间
+JavaInfoTool     → 查询 Java 版本
+CalculatorTool   → 计算两个整数的和
+```
+
+模型会根据问题选择工具：
+
+```text
+“上海现在几点？”       → getCurrentTime
+“当前 Java 是什么版本？” → getJavaRuntimeInfo
+“帮我算 12 加 30”       → add(left=12, right=30)
+```
+
+`@ToolParam` 会参与工具参数 Schema 的生成，`required = true` 表示该参数必须提供。工具内部仍然需要做好边界校验，例如 `CalculatorTool` 使用 `Math.addExact()` 检测整数溢出。
+
 打开：
 
 ```text

@@ -315,6 +315,22 @@ spring-ai-memory:<conversationId>:...   → 实际聊天消息
 
 会话目录和聊天消息默认 24 小时过期。删除会话时，会同时清理会话目录和对应的 ChatMemory 消息。
 
+### 清空和删除的区别
+
+```text
+清空消息：保留会话 ID、标题和目录，只删除聊天历史
+删除会话：删除聊天历史，同时删除 Redis 中的会话目录
+```
+
+接口：
+
+```text
+DELETE /api/conversations/{conversationId}/messages
+DELETE /api/conversations/{conversationId}
+```
+
+页面中的“清空当前消息”按钮使用第一种操作，适合保留一个会话名称后重新开始聊天。
+
 打开：
 
 ```text

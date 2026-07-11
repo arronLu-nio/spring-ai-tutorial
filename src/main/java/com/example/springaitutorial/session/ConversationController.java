@@ -41,4 +41,10 @@ public class ConversationController {
     public void delete(@PathVariable String conversationId) {
         conversationService.delete(conversationId);
     }
+
+    @DeleteMapping("/api/conversations/{conversationId}/messages")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void clearMessages(@PathVariable String conversationId) {
+        conversationService.clearMessages(conversationId);
+    }
 }

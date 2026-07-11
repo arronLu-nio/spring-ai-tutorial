@@ -73,6 +73,13 @@ public class ConversationService {
         redisClient.del(key(conversationId));
     }
 
+    public void clearMessages(String conversationId) {
+        Assert.hasText(conversationId, "conversationId cannot be empty");
+        // 只清空 ChatMemory，Redis 中的会话目录仍然保留。
+        chatMemory.clear(conversationId);
+        touch(conversationId);
+    }
+
     private ConversationInfo read(String conversationId) {
         Map<String, String> values = redisClient.hgetAll(key(conversationId));
         if (values.isEmpty()) {

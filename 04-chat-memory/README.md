@@ -356,6 +356,17 @@ public String getCurrentTime(String zoneId) {
 
 页面中选择“Tool Calling：查询时间”即可体验。这个接口同时具备多轮记忆能力，使用的会话 ID 是 `tool-demo`。
 
+默认的 `MessageChatMemoryAdvisor` 主要保存 User/Assistant 消息，不会把工具执行过程单独写入 Memory。本项目额外提供 `ToolMessageSavingAdvisor`，把工具调用过程也保存下来：
+
+```text
+USER
+ASSISTANT（toolCalls）
+TOOL（toolResponses）
+ASSISTANT（最终回答）
+```
+
+因此可以在 Redis 中看到 `type: "TOOL"` 的 JSON 消息。工具消息会增加上下文长度，实际项目应根据需要决定是否持久化。
+
 打开：
 
 ```text

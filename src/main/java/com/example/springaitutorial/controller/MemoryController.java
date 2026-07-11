@@ -12,6 +12,9 @@ import reactor.core.publisher.Flux;
 
 import com.example.springaitutorial.session.ConversationService;
 import com.example.springaitutorial.tool.CurrentTimeTool;
+import com.example.springaitutorial.advisor.ToolMessageSavingAdvisor;
+import org.springframework.ai.chat.client.AdvisorParams;
+import org.springframework.ai.model.tool.ToolCallingManager;
 
 @RestController
 public class MemoryController {
@@ -19,6 +22,7 @@ public class MemoryController {
     private final ChatClient chatClient;
     private final MessageChatMemoryAdvisor memoryAdvisor;
     private final ConversationService conversationService;
+    private final ToolMessageSavingAdvisor toolMessageSavingAdvisor;
 
     public MemoryController(ChatClient.Builder chatClientBuilder,
                             ChatMemory chatMemory,
@@ -29,6 +33,9 @@ public class MemoryController {
         // Spring AI 默认提供内存版 ChatMemory，适合学习和本地 Demo。
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         this.conversationService = conversationService;
+        this.toolMessageSavingAdvisor = new ToolMessageSavingAdvisor(
+                chatMemory,
+                ToolCallingManager.builder().build());
     }
 
     @GetMapping(value = "/ai/memory/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -43,8 +50,12 @@ public class MemoryController {
                 .advisors(advisorSpec -> advisorSpec
                         // 把记忆 Advisor 加入本次请求
                         .advisors(memoryAdvisor)
+                        // 保存 Assistant tool call 和 ToolResponseMessage
+                        .advisors(toolMessageSavingAdvisor)
                         // conversationId 决定读取和保存哪一段对话
                         .param(ChatMemory.CONVERSATION_ID, conversationId))
+                // 使用自定义 ToolCallingAdvisor，关闭框架自动注册的默认版本。
+                .advisors(AdvisorParams.toolCallingAdvisorAutoRegister(false))
                 .user(message)
                 .stream()
                 .content();

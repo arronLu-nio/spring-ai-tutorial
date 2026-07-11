@@ -6,7 +6,8 @@ spring:
       # DeepSeek 提供 OpenAI 兼容接口，因此复用 Spring AI 的 OpenAI Starter
       base-url: ${RAG_DEEPSEEK_API_BASE:https://api.deepseek.com}
       api-key: ${RAG_DEEPSEEK_API_KEY}
-      model: ${RAG_DEEPSEEK_MODEL:deepseek-v4-flash}
+      chat:
+        model: ${RAG_DEEPSEEK_MODEL:deepseek-v4-flash}
 
 server:
   port: 8080

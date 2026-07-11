@@ -209,3 +209,16 @@ Memory 中保存：UserMessage + AssistantMessage
 本次发送给模型：SystemMessage + 历史 User/Assistant + 当前 UserMessage
 本轮保存到 Memory：当前 UserMessage + AssistantMessage
 ```
+
+## 6. 自定义保留策略：系统消息永不淘汰
+
+如果希望系统规则也由 Memory 统一管理，可以实现一个 `ChatMemory` 包装器：
+
+```text
+SystemAwareChatMemory
+├── get()：在历史消息最前面补回 SystemMessage
+├── add()：只把 User/Assistant 交给 Redis
+└── clear()：继续委托给底层 Redis Memory
+```
+
+本项目的 `/ai/memory/system-aware` 接口使用这个策略：普通消息最多保留 4 条，但系统消息始终位于最前面。页面中选择“系统消息固定保留”即可体验。

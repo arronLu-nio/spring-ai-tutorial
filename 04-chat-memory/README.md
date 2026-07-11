@@ -119,6 +119,15 @@ public ChatMemory chatMemory() {
 
 页面中选择“Memory 多轮对话”，连续提问即可体验会话窗口。
 
+流式响应需要等所有文本片段返回完成后，才能拼接成完整的 `AssistantMessage` 并保存到 Redis。当前示例在 `doOnComplete()` 中完成这一步：
+
+```java
+.doOnNext(assistantResponse::append)
+.doOnComplete(() -> chatMemory.add(
+        conversationId,
+        new AssistantMessage(assistantResponse.toString())))
+```
+
 ## 4. SystemMessage 和普通消息
 
 Memory 中常见的消息类型包括：

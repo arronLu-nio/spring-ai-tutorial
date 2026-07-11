@@ -4,6 +4,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,12 +15,14 @@ import reactor.core.publisher.Flux;
 public class MemoryController {
 
     private final ChatClient chatClient;
+    private final ChatMemory chatMemory;
     private final MessageChatMemoryAdvisor memoryAdvisor;
 
     public MemoryController(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory) {
         this.chatClient = chatClientBuilder
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .build();
+        this.chatMemory = chatMemory;
         // Spring AI 默认提供内存版 ChatMemory，适合学习和本地 Demo。
         this.memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     }
@@ -27,6 +30,8 @@ public class MemoryController {
     @GetMapping(value = "/ai/memory/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chat(@RequestParam String conversationId,
                              @RequestParam String message) {
+        StringBuilder assistantResponse = new StringBuilder();
+
         return chatClient.prompt()
                 // system message：定义本次请求的角色和回答规则，每次请求都会重新加入
                 .system("你是一名耐心的 Java 和 Spring AI 老师，请使用简单的中文回答。")
@@ -37,6 +42,14 @@ public class MemoryController {
                         .param(ChatMemory.CONVERSATION_ID, conversationId))
                 .user(message)
                 .stream()
-                .content();
+                .content()
+                // 收集流式片段，等完整响应结束后保存 AssistantMessage。
+                .doOnNext(assistantResponse::append)
+                .doOnComplete(() -> {
+                    if (!assistantResponse.isEmpty()) {
+                        chatMemory.add(conversationId,
+                                new AssistantMessage(assistantResponse.toString()));
+                    }
+                });
     }
 }

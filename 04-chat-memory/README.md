@@ -222,3 +222,31 @@ SystemAwareChatMemory
 ```
 
 本项目的 `/ai/memory/system-aware` 接口使用这个策略：普通消息最多保留 4 条，但系统消息始终位于最前面。页面中选择“系统消息固定保留”即可体验。
+
+## 7. 第一条用户消息 + 最近 4 条
+
+有些应用希望长期保留用户最初的需求，同时只携带最近对话，避免上下文越来越长。本项目新增 `FirstUserPlusRecentChatMemory`：
+
+```text
+最终记忆 = 第一条 UserMessage + 最近 4 条 User/Assistant 消息
+```
+
+例如完整历史是：
+
+```text
+User1, Assistant1, User2, Assistant2, User3, Assistant3, User4, Assistant4
+```
+
+裁剪后保留：
+
+```text
+User1, User3, Assistant3, User4, Assistant4
+```
+
+对应接口：
+
+```bash
+curl -N "http://localhost:8080/ai/memory/first-user?conversationId=first-user-demo&message=我是一名后端开发者"
+```
+
+页面中选择“第一条用户消息 + 最近4条”即可体验。注意：这里的 4 仍然指消息条数，不是 4 轮对话。

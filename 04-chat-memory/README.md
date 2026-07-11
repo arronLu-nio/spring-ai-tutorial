@@ -331,6 +331,31 @@ DELETE /api/conversations/{conversationId}
 
 页面中的“清空当前消息”按钮使用第一种操作，适合保留一个会话名称后重新开始聊天。
 
+## 12. Tool Calling
+
+Tool Calling 是模型调用 Java 方法的能力。本项目新增了一个查询时间的工具：
+
+```java
+@Tool(description = "查询指定时区的当前日期和时间")
+public String getCurrentTime(String zoneId) {
+    return ...;
+}
+```
+
+Controller 通过 `.tools(new CurrentTimeTool())` 注册工具。用户询问当前时间时，模型会自动完成：
+
+```text
+判断是否需要工具
+    ↓
+生成工具参数
+    ↓
+执行 Java 方法
+    ↓
+读取工具结果并生成最终回答
+```
+
+页面中选择“Tool Calling：查询时间”即可体验。
+
 打开：
 
 ```text

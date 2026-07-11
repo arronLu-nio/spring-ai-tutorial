@@ -89,4 +89,11 @@ UserMessage       → 用户问题
 AssistantMessage  → AI 回复
 ```
 
-`SystemMessage` 不是用户提问，也不是 AI 回复，而是告诉模型“应该如何工作”。在窗口淘汰时，系统消息会被特殊保留，不会像普通历史消息一样随意删除。
+`SystemMessage` 不是用户提问，也不是 AI 回复，而是告诉模型“应该如何工作”。在当前 `MessageChatMemoryAdvisor` 的实现中，`system()` 产生的系统消息会被放到本次请求的最前面，但 Advisor 默认只把当前用户消息和模型回复写入 Memory；因此它不会占用下面 10 条历史消息的窗口。
+
+```text
+Memory 中保存：UserMessage + AssistantMessage
+本次发送给模型：SystemMessage + Memory 历史 + 当前 UserMessage
+```
+
+如果你手动把 `SystemMessage` 写入 `ChatMemory`，`MessageWindowChatMemory` 才会对它做特殊保留处理。

@@ -7,6 +7,8 @@ spring:
         # Nacos 控制台映射在 http://localhost:18080，客户端地址不带 /nacos。
         server-addr: localhost:18080
         group: DEFAULT_GROUP
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
         refresh-enabled: true
   config:
     # 使用 Spring Cloud Alibaba 2025.x 推荐的 spring.config.import 方式。

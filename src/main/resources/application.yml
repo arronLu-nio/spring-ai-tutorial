@@ -1,6 +1,11 @@
 spring:
   application:
     name: spring-ai-tutorial
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
   ai:
     openai:
       # DeepSeek 提供 OpenAI 兼容接口，因此复用 Spring AI 的 OpenAI Starter
@@ -8,6 +13,14 @@ spring:
       api-key: ${RAG_DEEPSEEK_API_KEY}
       chat:
         model: ${RAG_DEEPSEEK_MODEL:deepseek-v4-flash}
+  chat:
+    memory:
+      repository:
+        redis:
+          host: ${REDIS_HOST:localhost}
+          port: ${REDIS_PORT:6379}
+          key-prefix: spring-ai-memory:
+          time-to-live: 24h
 
 server:
   port: 8080

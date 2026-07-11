@@ -52,9 +52,49 @@ conversationId
 保存本轮用户消息和 AI 回复
 ```
 
-当前使用的是内存存储，应用重启后历史会消失。后续会学习 Redis 和数据库持久化。
+当前使用 Redis Stack 保存消息，应用重启后会话仍然存在。
 
-## 2. 配置记忆窗口
+## 2. Redis 持久化
+
+项目连接本机 Redis Stack：
+
+```text
+host: localhost
+port: 6379
+```
+
+启动前设置 Redis 密码：
+
+```bash
+export REDIS_PASSWORD="your-redis-password"
+mvn spring-boot:run
+```
+
+项目使用 `RedisChatMemoryRepository` 保存消息，再由 `MessageWindowChatMemory` 控制每个会话最多保留 10 条消息：
+
+```java
+@Bean
+public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
+    return MessageWindowChatMemory.builder()
+            .chatMemoryRepository(repository)
+            .maxMessages(10)
+            .build();
+}
+```
+
+默认 TTL 是 24 小时，配置在 `application.yml`：
+
+```yaml
+spring:
+  ai:
+    chat:
+      memory:
+        repository:
+          redis:
+            time-to-live: 24h
+```
+
+## 3. 配置记忆窗口
 
 Spring AI 默认的 `MessageWindowChatMemory` 会保留一个有限的消息窗口。我们也可以手动配置窗口大小：
 
@@ -79,7 +119,7 @@ public ChatMemory chatMemory() {
 
 页面中选择“Memory 多轮对话”，连续提问即可体验会话窗口。
 
-## 3. SystemMessage 和普通消息
+## 4. SystemMessage 和普通消息
 
 Memory 中常见的消息类型包括：
 

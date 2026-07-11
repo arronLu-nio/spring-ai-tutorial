@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.RedisClient;
 
+import com.example.springaitutorial.session.ConversationService;
+
 import java.util.List;
 import java.util.Map;
 
@@ -53,5 +55,10 @@ public class ChatMemoryConfig {
                 // 最多保留 10 条消息，超出后淘汰较早的消息
                 .maxMessages(10)
                 .build();
+    }
+
+    @Bean
+    public ConversationService conversationService(RedisClient redisClient, ChatMemory chatMemory) {
+        return new ConversationService(redisClient, chatMemory);
     }
 }

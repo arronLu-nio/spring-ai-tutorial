@@ -300,3 +300,23 @@ new TokenWindowChatMemory(
 摘要失败只记录日志，不影响已经返回给用户的回答。页面中选择“异步摘要记忆”即可对比同步摘要和异步摘要的差异。
 
 这个示例使用本地异步任务，生产环境还需要增加任务队列、分布式锁、幂等处理和失败重试。
+
+## 11. 会话管理
+
+本节新增独立页面 `/memory.html`，用于新建、切换和删除会话。
+
+会话目录使用 Redis 保存，不使用数据库：
+
+```text
+spring-ai-memory:conversation-ids       → 会话 ID 集合
+spring-ai-memory:conversation:<id>      → 标题、创建时间、更新时间
+spring-ai-memory:<conversationId>:...   → 实际聊天消息
+```
+
+会话目录和聊天消息默认 24 小时过期。删除会话时，会同时清理会话目录和对应的 ChatMemory 消息。
+
+打开：
+
+```text
+http://localhost:8080/memory.html
+```

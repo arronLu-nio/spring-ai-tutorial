@@ -38,13 +38,15 @@
 
 ```mermaid
 flowchart LR
-    A[ChatClient] --> B[Prompt]
-    B --> C[结构化输出]
-    C --> D[Chat Memory]
-    D --> E[Embedding + Vector Store]
-    E --> F[RAG 知识库]
-    F --> G[Tool Calling]
-    G --> H[生产级 AI 应用]
+    A[ChatClient] --> B[流式输出]
+    B --> C[Prompt]
+    C --> D[结构化输出]
+    D --> E[Chat Memory]
+    E --> F[Embedding + Vector Store]
+    F --> G[RAG 知识库]
+    G --> H[Tool Calling]
+    H --> I[多模态]
+    I --> J[生产级 AI 应用]
 ```
 
 ## 🚀 快速开始
@@ -55,7 +57,7 @@ flowchart LR
 - Maven 3.9+
 - Spring Boot 4.0.x
 - Spring AI 2.0.0
-- 一个 OpenAI 兼容接口的 API Key
+- 一个 DeepSeek API Key
 
 ### 运行项目
 
@@ -63,29 +65,42 @@ flowchart LR
 git clone https://github.com/arronLu-nio/spring-ai-tutorial.git
 cd spring-ai-tutorial
 
-export OPENAI_API_KEY="your-api-key"
+export RAG_DEEPSEEK_API_BASE="https://api.deepseek.com"
+export RAG_DEEPSEEK_API_KEY="your-deepseek-api-key"
+export RAG_DEEPSEEK_MODEL="deepseek-chat"
 mvn spring-boot:run
 ```
 
-调用第一个 AI 接口：
+### 调用接口
+
+同步返回完整结果：
 
 ```bash
 curl "http://localhost:8080/ai/chat?message=用一句话介绍 Spring AI"
 ```
 
+流式返回结果：
+
+```bash
+curl -N "http://localhost:8080/ai/chat/stream?message=用三句话介绍 Spring AI"
+```
+
 ## 📚 章节目录
 
-| 章节 | 主题 | 核心内容 | 状态 |
+| 章节 | 主题 | 核心知识点 | 状态 |
 |---|---|---|:---:|
-| [01-chatclient](./01-chatclient) | ChatClient 入门 | 调用大模型、构建响应 | ✅ |
-| 02-prompt | Prompt 工程 | System Prompt、模板、参数 | 🚧 |
-| 03-structured-output | 结构化输出 | JSON、Java Bean、结果校验 | 🚧 |
-| 04-chat-memory | 多轮对话 | 会话历史、Memory、上下文 | 🚧 |
-| 05-rag | RAG 知识库 | 文档切分、Embedding、向量检索 | 🚧 |
-| 06-tool-calling | Tool Calling | 让模型调用业务 API | 🚧 |
-| 07-observability | 可观测性 | 日志、指标、Token 成本 | 🚧 |
+| [01-chatclient](./01-chatclient) | ChatClient 入门 | 同步调用、流式输出、SSE、异常处理 | ✅ |
+| 02-prompt | Prompt 工程 | 模板、Few-shot、约束、Prompt 注入 | 🚧 |
+| 03-structured-output | 结构化输出 | JSON、Java Bean、校验、重试 | 🚧 |
+| 04-chat-memory | 多轮对话 | Memory、会话 ID、Redis、上下文压缩 | 🚧 |
+| 05-embedding-vector-store | 向量基础 | Embedding、文档切分、VectorStore、PGVector | 🚧 |
+| 06-rag | RAG 知识库 | 检索、Query 改写、引用、效果评估 | 🚧 |
+| 07-tool-calling | Tool Calling | `@Tool`、业务 API、权限和人工确认 | 🚧 |
+| 08-multimodal | 多模态 | 图片、音频、文本转语音、模型切换 | 🚧 |
+| 09-ai-engineering | AI 工程化 | 缓存、限流、重试、成本和安全 | 🚧 |
+| 10-production-project | 综合项目 | 知识库助手、Docker、部署与监控 | 🚧 |
 
-## 🧩 第一个示例做了什么？
+## 🧩 第一章：从同步到流式
 
 ```text
 用户问题
@@ -93,22 +108,26 @@ curl "http://localhost:8080/ai/chat?message=用一句话介绍 Spring AI"
    ▼
 Spring Web Controller
    │
-   ▼
-ChatClient.prompt()
+   ├── ChatClient.call()   → 一次性返回完整答案
    │
-   ▼
-Chat Model
-   │
-   ▼
-AI 回复
+   └── ChatClient.stream() → Flux 分段返回 → SSE 实时推送
 ```
 
-核心代码只有几行：
+同步调用：
 
 ```java
 return chatClient.prompt()
         .user(message)
         .call()
+        .content();
+```
+
+流式调用：
+
+```java
+return chatClient.prompt()
+        .user(message)
+        .stream()
         .content();
 ```
 
@@ -122,9 +141,11 @@ return chatClient.prompt()
 
 ## 🛠️ 技术栈
 
-`Java 21` · `Spring Boot 4` · `Spring AI 2` · `Maven` · `OpenAI Compatible API`
+`Java 21` · `Spring Boot 4` · `Spring AI 2` · `Maven` · `DeepSeek`
 
 后续会加入 `PostgreSQL`、`PGVector`、`Redis`、`Docker` 和更多模型提供商。
+
+> 本项目通过 Spring AI 的 OpenAI 兼容接口接入 DeepSeek。API Key 仅从环境变量读取，请勿提交到 Git。
 
 ## 🌟 支持项目
 
@@ -141,4 +162,3 @@ return chatClient.prompt()
 ## 📄 License
 
 [MIT](./LICENSE)
-

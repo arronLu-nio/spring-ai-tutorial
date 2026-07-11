@@ -80,13 +80,13 @@
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
-            // Prompt 接口是同步接口，直接显示完整文本。
-            if (mode === 'prompt' || mode === 'template') {
+            // Prompt 教师接口是同步接口，直接显示完整文本。
+            if (mode === 'prompt') {
                 answer.textContent = await response.text();
                 return;
             }
 
-            // 普通聊天接口是 SSE 流式接口，需要逐行读取 data: 内容。
+            // 普通聊天和 Prompt 模板接口都是 SSE 流式接口，逐行读取 data: 内容。
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';

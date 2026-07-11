@@ -1,9 +1,11 @@
 package com.example.springaitutorial;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @RestController
 public class PromptController {
@@ -27,15 +29,15 @@ public class PromptController {
                 .content();
     }
 
-    @GetMapping("/ai/prompt/template")
-    public String explainTopic(@RequestParam String topic) {
+    @GetMapping(path = "/ai/prompt/template",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> explainTopic(@RequestParam String topic) {
         return chatClient.prompt()
                 // user 文本中的 {topic} 是模板变量
                 .user(user -> user
                         .text("请用简单的中文解释 {topic}，并给出一个 Java 示例。")
                         // param：在运行时把 topic 的值填入模板
                         .param("topic", topic))
-                .call()                  // 同步等待完整回答
-                .content();              // 提取文本内容
+                .stream()                // 流式调用：生成一段就返回一段
+                .content();              // 得到 Flux<String> 文本片段
     }
 }

@@ -49,10 +49,10 @@ return chatClient.prompt()
 调用模板接口：
 
 ```bash
-curl "http://localhost:8080/ai/prompt/template?topic=Flux%3CString%3E"
+curl -N "http://localhost:8080/ai/prompt/template?topic=Flux%3CString%3E"
 ```
 
-页面中选择“Prompt 模板模式”，也可以直接体验这个接口。
+这个接口使用 `Flux<String>` 流式返回。页面中选择“Prompt 模板模式”，也可以直接体验这个接口。
 
 ## system 和 user 的区别
 

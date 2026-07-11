@@ -1,4 +1,4 @@
-package com.example.springaitutorial;
+package com.example.springaitutorial.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.http.MediaType;

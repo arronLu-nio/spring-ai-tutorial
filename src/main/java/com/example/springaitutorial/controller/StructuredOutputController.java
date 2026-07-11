@@ -1,5 +1,6 @@
-package com.example.springaitutorial;
+package com.example.springaitutorial.controller;
 
+import com.example.springaitutorial.model.JavaConcept;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,4 +24,3 @@ public class StructuredOutputController {
                 .entity(JavaConcept.class);     // 把 AI JSON 转换成 Java 对象
     }
 }
-

@@ -1,4 +1,4 @@
-package com.example.springaitutorial;
+package com.example.springaitutorial.model;
 
 import java.util.List;
 
@@ -13,4 +13,3 @@ public record JavaConcept(
         List<String> examples
 ) {
 }
-

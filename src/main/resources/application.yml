@@ -24,7 +24,7 @@ spring:
       chat:
         model: ${RAG_DEEPSEEK_MODEL:deepseek-v4-flash}
       embedding:
-        base-url: ${RAG_EMBEDDING_API_BASE:https://api.openai.com}
+        base-url: ${RAG_EMBEDDING_API_BASE:https://llm-wfm5rc08u0dg1xz3.cn-beijing.maas.aliyuncs.com/compatible-mode/v1}
         api-key: ${RAG_EMBEDDING_API_KEY:${DASHSCOPE_API_KEY:}}
         model: ${RAG_EMBEDDING_MODEL:text-embedding-v4}
         dimensions: ${RAG_EMBEDDING_DIMENSIONS:1024}

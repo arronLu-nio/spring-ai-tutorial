@@ -82,6 +82,36 @@ curl "http://localhost:8080/ai/structured-output?topic=Flux"
 
 页面中选择“结构化输出模式”即可体验。
 
+## 2. JSON 解析异常处理
+
+模型不一定每次都返回合法 JSON，直接调用 `entity()` 可能抛出异常。对外接口应该捕获异常并返回统一的错误信息：
+
+```java
+try {
+    JavaConcept result = chatClient.prompt()
+            .user("请解释这个概念：" + topic)
+            .call()
+            .entity(JavaConcept.class);
+    return ResponseEntity.ok(result);
+} catch (Exception exception) {
+    log.error("结构化输出解析失败，topic={}", topic, exception);
+    return ResponseEntity.internalServerError().body(Map.of(
+            "error", "STRUCTURED_OUTPUT_PARSE_FAILED",
+            "message", "AI 返回的内容无法转换成 JavaConcept，请稍后重试"
+    ));
+}
+```
+
+调用安全接口：
+
+```bash
+curl "http://localhost:8080/ai/structured-output/safe?topic=Flux"
+```
+
+页面中选择“结构化输出（异常处理）”即可体验。
+
+> 教程中先使用通用 `Exception` 让流程更容易理解。生产项目中应进一步区分 API 超时、模型调用失败、JSON 转换失败等异常类型。
+
 ## 关键 API
 
 | API | 作用 |

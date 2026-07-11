@@ -82,6 +82,8 @@ public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
 }
 ```
 
+开发环境还会打印 `findByConversationId()` 和 `saveAll()` 前后的消息列表，用来观察 Memory 是如何从 Redis 读取和写回的。
+
 默认 TTL 是 24 小时，配置在 `application.yml`：
 
 ```yaml

@@ -6,6 +6,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.redis.RedisChatMemoryRepository;
 import com.example.springaitutorial.memory.LoggingChatMemoryRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.DefaultJedisClientConfig;
@@ -45,7 +46,8 @@ public class ChatMemoryConfig {
     }
 
     @Bean
-    public ChatMemory chatMemory(ChatMemoryRepository repository) {
+    public ChatMemory chatMemory(
+            @Qualifier("loggingChatMemoryRepository") ChatMemoryRepository repository) {
         return MessageWindowChatMemory.builder()
                 // 使用 Redis Stack 保存消息，应用重启后会话仍然存在
                 .chatMemoryRepository(repository)

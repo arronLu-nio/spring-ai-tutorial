@@ -17,7 +17,7 @@ HTTP 请求 → ChatClient → Chat Model → 大模型 → 文本响应
 ```bash
 export RAG_DEEPSEEK_API_BASE="https://api.deepseek.com"
 export RAG_DEEPSEEK_API_KEY="your-deepseek-api-key"
-export RAG_DEEPSEEK_MODEL="deepseek-chat"
+export RAG_DEEPSEEK_MODEL="deepseek-v4-flash"
 mvn spring-boot:run
 ```
 

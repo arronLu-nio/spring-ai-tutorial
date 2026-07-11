@@ -38,6 +38,7 @@
             <option value="template">Prompt 模板模式</option>
             <option value="few-shot">Few-shot 示例模式</option>
             <option value="format">格式约束模式</option>
+            <option value="structured">结构化输出模式</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -82,13 +83,21 @@
                         ? `/ai/prompt/few-shot?question=${encodeURIComponent(question)}`
                         : mode === 'format'
                             ? `/ai/prompt/format?question=${encodeURIComponent(question)}`
-                    : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
+                            : mode === 'structured'
+                                ? `/ai/structured-output?topic=${encodeURIComponent(question)}`
+                        : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
-            // Prompt 教师接口是同步接口，直接显示完整文本。
-            if (mode === 'prompt') {
-                answer.textContent = await response.text();
+            // Prompt 教师和结构化输出接口是同步接口，直接显示完整文本。
+            if (mode === 'prompt' || mode === 'structured') {
+                const text = await response.text();
+                try {
+                    // JSON 结果格式化显示，便于观察 Java 对象的字段结构。
+                    answer.textContent = JSON.stringify(JSON.parse(text), null, 2);
+                } catch {
+                    answer.textContent = text;
+                }
                 return;
             }
 

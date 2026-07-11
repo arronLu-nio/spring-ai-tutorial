@@ -90,6 +90,44 @@ public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
 
 本项目直接使用 Spring AI 提供的 `RedisChatMemoryRepository`，通过 `metadataFields(...)` 只索引必要的字符串字段。未配置的 metadata 仍然完整保存在 Redis JSON 中，只是不参与搜索，符合“存储”和“索引”分离的设计。
 
+当前索引字段如下：
+
+```text
+$.content         → 全文索引
+$.type            → 消息类型
+$.conversation_id → 会话 ID（TAG 索引）
+$.timestamp       → 消息顺序（数字索引）
+$.metadata.role   → 角色（TAG 索引）
+```
+
+例如下面这些字段会保存，但不会建立索引：
+
+```json
+{
+  "annotations": [],
+  "index": 0,
+  "reasoningContent": ""
+}
+```
+
+这不会影响按 `conversation_id` 查询历史消息。`content` 的全文索引会增加一些 Redis 内存占用，但当前每个会话最多保留 10 条消息，并且消息 24 小时后过期，适合教程和小规模应用。
+
+Redis 中的 Key 通常类似：
+
+```text
+spring-ai-memory:web-demo:1783773093821
+```
+
+末尾数字是该会话的递增时间序列，用于保证消息顺序；查询时主要根据 JSON 文档中的 `conversation_id` 索引完成。
+
+保存消息时，`saveAll()` 保存的是当前会话的完整快照。为了配合消息窗口淘汰策略，Repository 会先清理当前会话，再写入最新消息列表，因此 Key 可能重新生成。
+
+本项目使用的新索引名是 `chat-memory-idx-v2`。如果本地 Redis 中还保留旧的 `chat-memory-idx`，可以删除旧索引（不会删除 JSON 消息）：
+
+```bash
+REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli FT.DROPINDEX chat-memory-idx
+```
+
 默认 TTL 是 24 小时，配置在 `application.yml`：
 
 ```yaml

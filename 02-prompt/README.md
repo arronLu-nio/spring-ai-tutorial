@@ -54,6 +54,35 @@ curl -N "http://localhost:8080/ai/prompt/template?topic=Flux%3CString%3E"
 
 这个接口使用 `Flux<String>` 流式返回。页面中选择“Prompt 模板模式”，也可以直接体验这个接口。
 
+## 4. Few-shot Prompt
+
+Few-shot 的意思是：先给 AI 一两个输入输出示例，再让它处理新的问题。示例可以帮助模型理解你想要的回答格式。
+
+```java
+return chatClient.prompt()
+        .system("""
+                你是一个 Java 概念解释助手。
+                请严格参考下面的示例，用“定义 + 类比 + 示例”三个部分回答。
+
+                示例问题：什么是 String？
+                示例回答：
+                定义：String 是 Java 中表示字符串的类型。
+                类比：它像一个可以存放文字的盒子。
+                示例：String name = "Spring AI";
+                """)
+        .user(question)
+        .stream()
+        .content();
+```
+
+调用接口：
+
+```bash
+curl -N "http://localhost:8080/ai/prompt/few-shot?question=什么是Flux？"
+```
+
+页面中选择“Few-shot 示例模式”即可体验。
+
 ## system 和 user 的区别
 
 | 方法 | 作用 | 示例 |

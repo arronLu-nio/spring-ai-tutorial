@@ -36,6 +36,7 @@
             <option value="chat">普通聊天（流式）</option>
             <option value="prompt">Prompt 教师模式</option>
             <option value="template">Prompt 模板模式</option>
+            <option value="few-shot">Few-shot 示例模式</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -76,6 +77,8 @@
                 ? `/ai/prompt?question=${encodeURIComponent(question)}`
                 : mode === 'template'
                     ? `/ai/prompt/template?topic=${encodeURIComponent(question)}`
+                    : mode === 'few-shot'
+                        ? `/ai/prompt/few-shot?question=${encodeURIComponent(question)}`
                     : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
@@ -86,7 +89,7 @@
                 return;
             }
 
-            // 普通聊天和 Prompt 模板接口都是 SSE 流式接口，逐行读取 data: 内容。
+            // 普通聊天、Prompt 模板和 Few-shot 接口都是 SSE 流式接口。
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';

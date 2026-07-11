@@ -40,4 +40,23 @@ public class PromptController {
                 .stream()                // 流式调用：生成一段就返回一段
                 .content();              // 得到 Flux<String> 文本片段
     }
+
+    @GetMapping(path = "/ai/prompt/few-shot", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> fewShot(@RequestParam String question) {
+        return chatClient.prompt()
+                .system("""
+                        你是一个 Java 概念解释助手。
+                        请严格参考下面的示例，用“定义 + 类比 + 示例”三个部分回答。
+
+                        示例问题：什么是 String？
+                        示例回答：
+                        定义：String 是 Java 中表示字符串的类型。
+                        类比：它像一个可以存放文字的盒子。
+                        示例：String name = \"Spring AI\";
+                        """)
+                // user：传入新的问题，让模型模仿上面的回答格式
+                .user(question)
+                .stream()                // 流式返回回答片段
+                .content();              // 得到 Flux<String> 文本片段
+    }
 }

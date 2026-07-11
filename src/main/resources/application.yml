@@ -7,12 +7,27 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
   ai:
+    vectorstore:
+      # 本章主向量库使用 Milvus；OpenSearch 由 RAG 服务做关键词检索。
+      type: ${RAG_VECTOR_PROVIDER:milvus}
+      milvus:
+        client:
+          host: ${RAG_MILVUS_HOST:localhost}
+          port: ${RAG_MILVUS_PORT:19530}
+        collection-name: ${RAG_MILVUS_CHUNKS_COLLECTION:rag_chunks}
+        embedding-dimension: ${RAG_EMBEDDING_DIMENSIONS:1024}
+        initialize-schema: true
     openai:
       # DeepSeek 提供 OpenAI 兼容接口，因此复用 Spring AI 的 OpenAI Starter
       base-url: ${RAG_DEEPSEEK_API_BASE:https://api.deepseek.com}
       api-key: ${RAG_DEEPSEEK_API_KEY}
       chat:
         model: ${RAG_DEEPSEEK_MODEL:deepseek-v4-flash}
+      embedding:
+        base-url: ${RAG_EMBEDDING_API_BASE:https://api.openai.com}
+        api-key: ${RAG_EMBEDDING_API_KEY:${DASHSCOPE_API_KEY:}}
+        model: ${RAG_EMBEDDING_MODEL:text-embedding-v4}
+        dimensions: ${RAG_EMBEDDING_DIMENSIONS:1024}
   chat:
     memory:
       repository:
@@ -25,7 +40,22 @@ spring:
 server:
   port: 8080
 
+rag:
+  opensearch-url: ${RAG_OPENSEARCH_URL:http://127.0.0.1:9200}
+  opensearch-index: ${RAG_OPENSEARCH_INDEX:rag_chunks}
+  min-retrieval-score: ${RAG_MIN_RETRIEVAL_SCORE:0.2}
+  hybrid-candidate-top-k: ${RAG_HYBRID_CANDIDATE_TOP_K:20}
+  hybrid-rrf-k: ${RAG_HYBRID_RRF_K:60}
+  reranker-api-url: ${RAG_RERANKER_API_URL:}
+  reranker-api-key: ${RAG_RERANKER_API_KEY:}
+  reranker-model: ${RAG_RERANKER_MODEL:qwen3-vl-rerank}
+  reranker-timeout-seconds: ${RAG_RERANKER_TIMEOUT_SECONDS:30}
+  min-rerank-score: ${RAG_MIN_RERANK_SCORE:0.5}
+  upload-directory: ${RAG_UPLOAD_DIRECTORY:data/uploads}
+  upload-max-bytes: ${RAG_UPLOAD_MAX_BYTES:20971520}
+
 # 开发环境：打印 ChatClient 发给模型的 Prompt 和模型返回的响应
 logging:
   level:
     org.springframework.ai.chat.client.advisor: DEBUG
+    com.example.springaitutorial.memory: INFO

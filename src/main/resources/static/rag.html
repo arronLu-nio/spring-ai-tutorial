@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI RAG</title>
+    <style>
+        :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        body { margin: 0; background: #0b1224; color: #e8eefc; }
+        main { width: min(900px, calc(100% - 32px)); margin: 40px auto; }
+        h1 { margin-bottom: 8px; }
+        .muted { color: #91a1c5; }
+        section { margin: 18px 0; padding: 20px; background: #111b33; border: 1px solid #26365d; border-radius: 16px; }
+        input { padding: 12px; color: white; background: #172442; border: 1px solid #33466f; border-radius: 10px; }
+        button { padding: 11px 16px; color: white; background: #10b981; border: 0; border-radius: 10px; cursor: pointer; }
+        #answer { min-height: 150px; white-space: pre-wrap; line-height: 1.7; }
+        .source { margin-top: 12px; padding: 12px; background: #1d2a49; border-radius: 10px; white-space: pre-wrap; }
+        form { display: flex; gap: 10px; flex-wrap: wrap; }
+        form input[type="text"] { flex: 1; min-width: 240px; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>RAG 知识库</h1>
+    <p class="muted">上传文档 → Tika 解析 → Token 切分 → DashScope Embedding → Milvus + OpenSearch 检索</p>
+
+    <section>
+        <h2>1. 上传文档</h2>
+        <form id="upload-form">
+            <input id="file" type="file" required>
+            <button type="submit">上传并建立索引</button>
+        </form>
+        <p id="upload-result" class="muted"></p>
+    </section>
+
+    <section>
+        <h2>2. 知识库问答</h2>
+        <form id="ask-form">
+            <input id="question" type="text" placeholder="例如：公司的报销流程是什么？" required>
+            <button type="submit">检索并回答</button>
+        </form>
+        <h3>回答</h3>
+        <div id="answer"></div>
+        <h3>参考来源</h3>
+        <div id="sources"></div>
+    </section>
+</main>
+<script>
+    document.querySelector('#upload-form').onsubmit = async event => {
+        event.preventDefault();
+        const file = document.querySelector('#file').files[0];
+        if (!file) return;
+        const body = new FormData();
+        body.append('file', file);
+        const response = await fetch('/api/rag/documents', { method: 'POST', body });
+        const result = await response.json();
+        document.querySelector('#upload-result').textContent = response.ok
+            ? `已建立索引：${result.fileName}，${result.chunkCount} 个切片`
+            : `上传失败：${result.message || response.status}`;
+    };
+
+    document.querySelector('#ask-form').onsubmit = async event => {
+        event.preventDefault();
+        const question = document.querySelector('#question').value.trim();
+        const response = await fetch(`/api/rag/ask?question=${encodeURIComponent(question)}`);
+        const result = await response.json();
+        document.querySelector('#answer').textContent = result.answer || result.message || '暂无回答';
+        const sources = document.querySelector('#sources');
+        sources.replaceChildren();
+        (result.sources || []).forEach(source => {
+            const element = document.createElement('div');
+            element.className = 'source';
+            element.textContent = `[${source.source}]\n${source.content}`;
+            sources.appendChild(element);
+        });
+    };
+</script>
+</body>
+</html>

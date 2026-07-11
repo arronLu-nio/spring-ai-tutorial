@@ -78,8 +78,11 @@ public class RagIngestionService {
             }
         }
 
-        // 7. 写入 Milvus：Spring AI 会调用 EmbeddingModel 生成向量，再保存向量和文本。
-        milvus.add(chunks);
+        // 7. 写入 Milvus：DashScope 单批最多接收 10 条文本，因此在上传流程中分批调用。
+        for (int start = 0; start < chunks.size(); start += 10) {
+            int end = Math.min(start + 10, chunks.size());
+            milvus.add(chunks.subList(start, end));
+        }
 
         // 8. 同时写入 OpenSearch：用于 BM25 关键词检索，后续与 Milvus 结果做混合召回。
         openSearch.saveAll(chunks);

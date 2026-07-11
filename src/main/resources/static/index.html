@@ -46,6 +46,7 @@
             <option value="native">模型原生结构化输出</option>
             <option value="memory">Memory 多轮对话</option>
             <option value="custom-memory">自定义 Memory 窗口（4 条）</option>
+            <option value="system-memory">SystemMessage + Memory</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -106,6 +107,8 @@
                                                         ? `/ai/memory/chat?conversationId=web-demo&message=${encodeURIComponent(question)}`
                                                         : mode === 'custom-memory'
                                                             ? `/ai/memory/custom-window?conversationId=custom-window-demo&message=${encodeURIComponent(question)}`
+                                                            : mode === 'system-memory'
+                                                                ? `/ai/memory/system-message?conversationId=system-message-demo&message=${encodeURIComponent(question)}`
                         : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);

@@ -202,3 +202,10 @@ Memory 中保存：UserMessage + AssistantMessage
 ```
 
 如果你手动把 `SystemMessage` 写入 `ChatMemory`，`MessageWindowChatMemory` 才会对它做特殊保留处理。
+
+本节还提供了独立接口 `/ai/memory/system-message`：每次请求都会重新注入系统规则，而历史对话由 Memory Advisor 管理。页面中选择“SystemMessage + Memory”即可体验。
+
+```text
+本次发送给模型：SystemMessage + 历史 User/Assistant + 当前 UserMessage
+本轮保存到 Memory：当前 UserMessage + AssistantMessage
+```

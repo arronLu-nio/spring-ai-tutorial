@@ -79,7 +79,7 @@ mvn spring-boot:run
 http://localhost:8080
 ```
 
-页面会通过流式接口实时显示 AI 回复。
+页面可以选择普通流式聊天或第二章的 Prompt 教师模式。
 
 也可以使用命令行调用：
 

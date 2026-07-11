@@ -15,6 +15,7 @@
         .user { margin-left: auto; background: #2563eb; }
         .assistant { background: #1d2a49; }
         form { display: flex; gap: 10px; margin-top: 16px; }
+        select { padding: 0 12px; color: white; background: #111b33; border: 1px solid #33466f; border-radius: 10px; font-size: 14px; }
         input { flex: 1; padding: 14px 16px; color: white; background: #111b33; border: 1px solid #33466f; border-radius: 10px; font-size: 16px; }
         button { padding: 0 22px; color: white; background: #10b981; border: 0; border-radius: 10px; cursor: pointer; font-size: 16px; }
         button:disabled { opacity: .5; cursor: not-allowed; }
@@ -31,6 +32,10 @@
     </section>
 
     <form id="chat-form">
+        <select id="mode-select" title="选择接口">
+            <option value="chat">普通聊天（流式）</option>
+            <option value="prompt">Prompt 教师模式</option>
+        </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
     </form>
@@ -42,6 +47,7 @@
     const input = document.querySelector('#message-input');
     const sendButton = document.querySelector('#send-button');
     const messages = document.querySelector('#messages');
+    const modeSelect = document.querySelector('#mode-select');
 
     function addMessage(text, type) {
         const element = document.createElement('div');
@@ -64,9 +70,20 @@
         const answer = addMessage('', 'assistant');
 
         try {
-            const response = await fetch(`/ai/chat/stream?message=${encodeURIComponent(question)}`);
+            const mode = modeSelect.value;
+            const endpoint = mode === 'prompt'
+                ? `/ai/prompt?question=${encodeURIComponent(question)}`
+                : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
+            const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
+            // Prompt 接口是同步接口，直接显示完整文本。
+            if (mode === 'prompt') {
+                answer.textContent = await response.text();
+                return;
+            }
+
+            // 普通聊天接口是 SSE 流式接口，需要逐行读取 data: 内容。
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';

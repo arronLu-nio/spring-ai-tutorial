@@ -25,8 +25,36 @@ return chatClient.prompt()
         .system("请用中文解释 Java 或 Spring 概念，内容要适合初学者。")
         .user("请解释这个概念：" + topic)
         .call()                         // 同步等待完整结果
-        .entity(JavaConcept.class);     // JSON → Java 对象
+        // JavaConcept.class 告诉 Spring AI 目标对象的字段结构
+        // Spring AI 会要求模型返回 JSON，再把 JSON 反序列化为 JavaConcept
+        .entity(JavaConcept.class);
 ```
+
+### `entity()` 底层做了什么？
+
+```text
+JavaConcept.class
+      │
+      ▼
+生成结构化输出要求
+      │
+      ▼
+大模型返回 JSON 文本
+      │
+      ▼
+StructuredOutputConverter
+      │
+      ▼
+JavaConcept 对象
+```
+
+它不是简单地把字符串强制转换成对象，而是经过以下过程：
+
+1. 根据 `JavaConcept` 的字段生成输出结构
+2. 将结构要求传递给大模型
+3. 接收模型生成的 JSON 文本
+4. 通过转换器将 JSON 反序列化
+5. 返回可以直接使用的 Java 对象
 
 ## 运行
 
@@ -65,4 +93,3 @@ curl "http://localhost:8080/ai/structured-output?topic=Flux"
 ## 注意
 
 结构化输出依赖模型遵守 JSON 格式。生产环境还需要增加字段校验、异常处理和重试机制。
-

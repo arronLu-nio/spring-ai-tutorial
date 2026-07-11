@@ -104,7 +104,7 @@ curl -N "http://localhost:8080/ai/chat/stream?message=用三句话介绍 Spring 
 | [01-chatclient](./01-chatclient) | ChatClient 入门 | 同步调用、流式输出、SSE、异常处理 | ✅ |
 | [02-prompt](./02-prompt) | Prompt 工程 | `system()`、`user()`、模板、Few-shot、约束 | ✅ |
 | [03-structured-output](./03-structured-output) | 结构化输出 | JSON、Java Bean、`entity()`、异常处理、字段校验 | ✅ |
-| 04-chat-memory | 多轮对话 | Memory、会话 ID、Redis、上下文压缩 | 🚧 |
+| [04-chat-memory](./04-chat-memory) | 多轮对话 | Memory、会话 ID、Redis、上下文压缩 | ✅ |
 | 05-embedding-vector-store | 向量基础 | Embedding、文档切分、VectorStore、PGVector | 🚧 |
 | 06-rag | RAG 知识库 | 检索、Query 改写、引用、效果评估 | 🚧 |
 | 07-tool-calling | Tool Calling | `@Tool`、业务 API、权限和人工确认 | 🚧 |

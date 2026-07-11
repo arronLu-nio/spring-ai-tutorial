@@ -44,6 +44,7 @@
             <option value="retry">结构化输出（自动重试）</option>
             <option value="retry-custom">结构化输出（自定义重试）</option>
             <option value="native">模型原生结构化输出</option>
+            <option value="memory">Memory 多轮对话</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -100,6 +101,8 @@
                                                 ? `/ai/structured-output/retry/custom?topic=${encodeURIComponent(question)}`
                                                 : mode === 'native'
                                                     ? `/ai/structured-output/native?topic=${encodeURIComponent(question)}`
+                                                    : mode === 'memory'
+                                                        ? `/ai/memory/chat?conversationId=web-demo&message=${encodeURIComponent(question)}`
                         : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);

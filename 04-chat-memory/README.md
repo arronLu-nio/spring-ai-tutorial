@@ -84,6 +84,12 @@ public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
 
 开发环境还会打印 `findByConversationId()` 和 `saveAll()` 前后的消息列表，用来观察 Memory 是如何从 Redis 读取和写回的。
 
+### Redis metadata 兼容处理
+
+模型的 `AssistantMessage` metadata 可能包含数组或对象，例如 `annotations`、`contentFilters` 和 `toolCalls`。Redis Search 的 metadata 索引字段是 `TEXT`，不能直接索引这些复杂值。
+
+项目在写入 Redis 前，会把复杂 metadata 转成字符串，保留消息正文和基本上下文，避免出现“JSON 已保存但 Search 查不到”的问题。
+
 默认 TTL 是 24 小时，配置在 `application.yml`：
 
 ```yaml

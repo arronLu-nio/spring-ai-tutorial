@@ -50,6 +50,7 @@
             <option value="system-aware-memory">系统消息固定保留</option>
             <option value="first-user-memory">第一条用户消息 + 最近4条</option>
             <option value="token-memory">Token 窗口（1000 tokens）</option>
+            <option value="summary-memory">摘要记忆（摘要 + 最近4条）</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -116,8 +117,10 @@
                                                                     ? `/ai/memory/system-aware?conversationId=system-aware-demo&message=${encodeURIComponent(question)}`
                                                                         : mode === 'first-user-memory'
                                                                             ? `/ai/memory/first-user?conversationId=first-user-demo&message=${encodeURIComponent(question)}`
-                                                                            : mode === 'token-memory'
-                                                                                ? `/ai/memory/token-window?conversationId=token-window-demo&message=${encodeURIComponent(question)}`
+                                                                                : mode === 'token-memory'
+                                                                                    ? `/ai/memory/token-window?conversationId=token-window-demo&message=${encodeURIComponent(question)}`
+                                                                                    : mode === 'summary-memory'
+                                                                                        ? `/ai/memory/summary?conversationId=summary-demo&message=${encodeURIComponent(question)}`
                         : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);

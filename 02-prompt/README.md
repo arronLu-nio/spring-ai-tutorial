@@ -83,6 +83,39 @@ curl -N "http://localhost:8080/ai/prompt/few-shot?question=什么是Flux？"
 
 页面中选择“Few-shot 示例模式”即可体验。
 
+## 5. 输出格式约束
+
+除了规定回答内容，还可以规定回答的结构。例如要求 AI 固定输出“结论、解释、示例”三个部分：
+
+```java
+return chatClient.prompt()
+        .system("""
+                请严格按照下面的 Markdown 格式回答，不要增加其他标题：
+
+                ## 结论
+                用一句话回答问题。
+
+                ## 解释
+                用两到三句话解释原因。
+
+                ## 示例
+                提供一段最小可运行的 Java 代码。
+                """)
+        .user(question)
+        .stream()
+        .content();
+```
+
+调用接口：
+
+```bash
+curl -N "http://localhost:8080/ai/prompt/format?question=什么是ChatClient？"
+```
+
+页面中选择“格式约束模式”即可体验。
+
+> 本节的格式约束仍然是普通文本。下一章会学习如何让 AI 返回可以直接映射成 Java 对象的结构化数据。
+
 ## system 和 user 的区别
 
 | 方法 | 作用 | 示例 |

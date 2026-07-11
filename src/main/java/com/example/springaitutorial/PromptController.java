@@ -59,4 +59,26 @@ public class PromptController {
                 .stream()                // 流式返回回答片段
                 .content();              // 得到 Flux<String> 文本片段
     }
+
+    @GetMapping(path = "/ai/prompt/format", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> format(@RequestParam String question) {
+        return chatClient.prompt()
+                .system("""
+                        你是一名 Java 教程老师。
+                        请严格按照下面的 Markdown 格式回答，不要增加其他标题：
+
+                        ## 结论
+                        用一句话回答问题。
+
+                        ## 解释
+                        用两到三句话解释原因。
+
+                        ## 示例
+                        提供一段最小可运行的 Java 代码。
+                        """)
+                // user：传入需要按照固定格式回答的问题
+                .user(question)
+                .stream()                // 流式返回格式化后的内容
+                .content();              // 得到 Flux<String> 文本片段
+    }
 }

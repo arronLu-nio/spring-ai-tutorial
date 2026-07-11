@@ -250,3 +250,19 @@ curl -N "http://localhost:8080/ai/memory/first-user?conversationId=first-user-de
 ```
 
 页面中选择“第一条用户消息 + 最近4条”即可体验。注意：这里的 4 仍然指消息条数，不是 4 轮对话。
+
+## 8. Token 窗口记忆
+
+固定消息条数有一个问题：每条消息长度可能差别很大。Token 窗口改为限制总 Token 数量，本项目示例最多保留约 1000 tokens 的最近消息：
+
+```java
+new TokenWindowChatMemory(
+        delegate,
+        new JTokkitTokenCountEstimator(),
+        1000
+)
+```
+
+裁剪流程是从最新消息向前计算：如果加入更早消息会超过 Token 上限，就停止继续加入。页面中选择“Token 窗口（1000 tokens）”即可体验。
+
+注意：Token 估算器和具体模型的分词器可能存在差异，生产环境还要为 SystemMessage、工具调用结果和模型输出预留 Token 空间。

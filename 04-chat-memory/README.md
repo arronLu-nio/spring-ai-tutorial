@@ -342,7 +342,7 @@ public String getCurrentTime(String zoneId) {
 }
 ```
 
-Controller 通过 `.tools(new CurrentTimeTool())` 注册工具。用户询问当前时间时，模型会自动完成：
+`MemoryController` 通过 `.tools(new CurrentTimeTool())` 注册工具。用户询问当前时间时，模型会自动完成：
 
 ```text
 判断是否需要工具
@@ -354,7 +354,7 @@ Controller 通过 `.tools(new CurrentTimeTool())` 注册工具。用户询问当
 读取工具结果并生成最终回答
 ```
 
-页面中选择“Tool Calling：查询时间”即可体验。
+页面中选择“Tool Calling：查询时间”即可体验。这个接口同时具备多轮记忆能力，使用的会话 ID 是 `tool-demo`。
 
 打开：
 

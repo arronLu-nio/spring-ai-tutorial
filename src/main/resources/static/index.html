@@ -127,13 +127,13 @@
                                                                                         : mode === 'summary-async-memory'
                                                                                             ? `/ai/memory/summary-async?conversationId=summary-async-demo&message=${encodeURIComponent(question)}`
                                                                                             : mode === 'tool-time'
-                                                                                                ? `/ai/tool/time?question=${encodeURIComponent(question)}`
+                                                                                                ? `/ai/memory/chat?conversationId=tool-demo&message=${encodeURIComponent(question)}`
                         : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
             // Prompt 教师和结构化输出接口是同步接口，直接显示完整文本。
-            if (mode === 'prompt' || mode === 'structured' || mode === 'structured-safe' || mode === 'validated' || mode === 'retry' || mode === 'retry-custom' || mode === 'native' || mode === 'tool-time') {
+            if (mode === 'prompt' || mode === 'structured' || mode === 'structured-safe' || mode === 'validated' || mode === 'retry' || mode === 'retry-custom' || mode === 'native') {
                 const text = await response.text();
                 try {
                     // JSON 结果格式化显示，便于观察 Java 对象的字段结构。

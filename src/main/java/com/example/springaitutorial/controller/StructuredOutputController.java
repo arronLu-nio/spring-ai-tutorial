@@ -11,18 +11,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Set;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 
 @RestController
 public class StructuredOutputController {
 
     private static final Logger log = LoggerFactory.getLogger(StructuredOutputController.class);
     private final ChatClient chatClient;
+    private final Validator validator;
 
-    public StructuredOutputController(ChatClient.Builder chatClientBuilder) {
+    public StructuredOutputController(ChatClient.Builder chatClientBuilder, Validator validator) {
         this.chatClient = chatClientBuilder
                 // 开发阶段打印结构化输出请求和响应
                 .defaultAdvisors(new SimpleLoggerAdvisor())
                 .build();
+        this.validator = validator;
     }
 
     @GetMapping("/ai/structured-output")
@@ -53,6 +58,36 @@ public class StructuredOutputController {
         } catch (Exception exception) {
             // 模型返回非法 JSON、字段类型不匹配等问题，都会在转换阶段抛出异常。
             log.error("结构化输出解析失败，topic={}", topic, exception);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "STRUCTURED_OUTPUT_PARSE_FAILED",
+                    "message", "AI 返回的内容无法转换成 JavaConcept，请稍后重试"
+            ));
+        }
+    }
+
+    @GetMapping("/ai/structured-output/validated")
+    public ResponseEntity<?> explainWithValidation(@RequestParam String topic) {
+        try {
+            JavaConcept result = chatClient.prompt()
+                    .system("请用中文解释 Java 或 Spring 概念，内容要适合初学者。")
+                    .user("请解释这个概念：" + topic)
+                    .call()
+                    .entity(JavaConcept.class);
+
+            // JSON 能成功解析，不代表内容满足业务规则；这里继续做字段校验。
+            Set<ConstraintViolation<JavaConcept>> violations = validator.validate(result);
+            if (!violations.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "STRUCTURED_OUTPUT_VALIDATION_FAILED",
+                        "messages", violations.stream()
+                                .map(ConstraintViolation::getMessage)
+                                .toList()
+                ));
+            }
+
+            return ResponseEntity.ok(result);
+        } catch (Exception exception) {
+            log.error("结构化输出校验前解析失败，topic={}", topic, exception);
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", "STRUCTURED_OUTPUT_PARSE_FAILED",
                     "message", "AI 返回的内容无法转换成 JavaConcept，请稍后重试"

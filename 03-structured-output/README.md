@@ -112,6 +112,36 @@ curl "http://localhost:8080/ai/structured-output/safe?topic=Flux"
 
 > 教程中先使用通用 `Exception` 让流程更容易理解。生产项目中应进一步区分 API 超时、模型调用失败、JSON 转换失败等异常类型。
 
+## 3. 字段校验
+
+JSON 能成功解析，不代表字段内容一定符合业务要求。可以使用 Jakarta Bean Validation 给 Java 类型增加约束：
+
+```java
+public record JavaConcept(
+        @NotBlank(message = "概念名称不能为空")
+        String name,
+        @NotBlank(message = "概念定义不能为空")
+        String definition,
+        @NotBlank(message = "概念类比不能为空")
+        String analogy,
+        @NotEmpty(message = "至少需要一个代码示例")
+        @Size(max = 5, message = "代码示例不能超过 5 个")
+        List<String> examples
+) {
+}
+```
+
+拿到 AI 对象后执行校验：
+
+```java
+Set<ConstraintViolation<JavaConcept>> violations = validator.validate(result);
+if (!violations.isEmpty()) {
+    // 返回字段校验失败信息，不把不合格的数据交给业务层
+}
+```
+
+页面中选择“结构化输出（字段校验）”即可体验。
+
 ## 关键 API
 
 | API | 作用 |

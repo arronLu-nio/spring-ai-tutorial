@@ -1,16 +1,16 @@
 package com.example.springaitutorial.config;
 
-import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.redis.RedisChatMemoryRepository;
-import com.example.springaitutorial.memory.LoggingChatMemoryRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.RedisClient;
+
+import java.util.List;
+import java.util.Map;
 
 @Configuration
 public class ChatMemoryConfig {
@@ -33,21 +33,20 @@ public class ChatMemoryConfig {
     public RedisChatMemoryRepository redisChatMemoryRepository(RedisClient redisClient) {
         return RedisChatMemoryRepository.builder()
                 .jedisClient(redisClient)
+                // 使用新的索引名，避免复用之前由通配 metadata schema 创建的旧索引。
+                .indexName("chat-memory-idx-v2")
                 .keyPrefix("spring-ai-memory:")
+                // 只索引确实需要查询的字符串字段，避免 $.metadata.* 把数组、对象也当成 TEXT 索引。
+                // 未列出的 metadata 仍然会完整保存在 Redis JSON 中，只是不参与搜索索引。
+                .metadataFields(List.of(
+                        Map.of("name", "role", "type", "tag")
+                ))
                 .timeToLive(java.time.Duration.ofHours(24))
                 .build();
     }
 
     @Bean
-    public ChatMemoryRepository loggingChatMemoryRepository(
-            RedisChatMemoryRepository repository) {
-        // 开发阶段观察 Redis 查询和保存的完整消息列表。
-        return new LoggingChatMemoryRepository(repository);
-    }
-
-    @Bean
-    public ChatMemory chatMemory(
-            @Qualifier("loggingChatMemoryRepository") ChatMemoryRepository repository) {
+    public ChatMemory chatMemory(RedisChatMemoryRepository repository) {
         return MessageWindowChatMemory.builder()
                 // 使用 Redis Stack 保存消息，应用重启后会话仍然存在
                 .chatMemoryRepository(repository)

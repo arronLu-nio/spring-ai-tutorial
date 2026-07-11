@@ -165,7 +165,26 @@ public ChatMemory chatMemory() {
 
 页面中选择“Memory 多轮对话”，连续提问即可体验会话窗口。
 
-## 4. SystemMessage 和普通消息
+## 4. 自定义消息窗口
+
+前面的 `ChatMemory` 默认保留 10 条消息。本节新增了一个独立的 `CustomMemoryController`，只保留最近 4 条消息：
+
+```java
+ChatMemory customChatMemory = MessageWindowChatMemory.builder()
+        .chatMemoryRepository(repository)
+        .maxMessages(4)
+        .build();
+```
+
+访问接口：
+
+```bash
+curl -N "http://localhost:8080/ai/memory/custom-window?conversationId=custom-demo&message=我叫小路"
+```
+
+页面中选择“自定义 Memory 窗口（4 条）”即可体验。这里的 4 指消息条数，通常约等于最近 2 轮对话；它与前面的 `web-demo` 使用不同的会话 ID，方便对比两种窗口大小。
+
+## 5. SystemMessage 和普通消息
 
 Memory 中常见的消息类型包括：
 

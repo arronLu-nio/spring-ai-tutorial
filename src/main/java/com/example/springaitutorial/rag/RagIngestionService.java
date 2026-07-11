@@ -37,6 +37,7 @@ public class RagIngestionService {
     }
 
     public IngestionResult ingest(MultipartFile file) throws IOException {
+        // 1. 先校验上传文件，避免空文件或超大文件进入解析和向量化流程。
         if (file.isEmpty()) {
             throw new IllegalArgumentException("文件不能为空");
         }
@@ -44,20 +45,26 @@ public class RagIngestionService {
             throw new IllegalArgumentException("文件超过大小限制");
         }
 
+        // 2. 保存原始文件，便于后续追踪来源和问题排查。
         Path uploadDirectory = Path.of(properties.getUploadDirectory());
         Files.createDirectories(uploadDirectory);
         String fileName = file.getOriginalFilename() == null ? "upload" : file.getOriginalFilename();
         Path target = uploadDirectory.resolve(UUID.randomUUID() + "-" + fileName);
         file.transferTo(target);
 
+        // 3. 确保 OpenSearch 的关键词索引已经创建。
         openSearch.ensureIndex();
+
+        // 4. Tika 根据文件类型自动解析 PDF、Word、文本等文件，统一得到 Document。
         List<Document> sourceDocuments = new TikaDocumentReader(target.toFile().getAbsolutePath()).get();
         List<Document> chunks = new ArrayList<>();
         for (Document source : sourceDocuments) {
+            // 5. 将长文档切成较小的片段，避免单次 Embedding 文本过长，也方便精准召回。
             List<Document> splitDocuments = splitter.apply(List.of(source));
             for (int i = 0; i < splitDocuments.size(); i++) {
                 Document split = splitDocuments.get(i);
                 HashMap<String, Object> metadata = new HashMap<>(split.getMetadata());
+                // 6. 给每个切片补充来源和顺序信息，回答时用于展示引用来源。
                 metadata.put("source", fileName);
                 metadata.put("chunkIndex", i);
                 metadata.put("documentId", target.getFileName().toString());
@@ -69,7 +76,10 @@ public class RagIngestionService {
             }
         }
 
+        // 7. 写入 Milvus：Spring AI 会调用 EmbeddingModel 生成向量，再保存向量和文本。
         milvus.add(chunks);
+
+        // 8. 同时写入 OpenSearch：用于 BM25 关键词检索，后续与 Milvus 结果做混合召回。
         openSearch.saveAll(chunks);
         return new IngestionResult(fileName, chunks.size());
     }

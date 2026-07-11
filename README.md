@@ -83,6 +83,25 @@ http://localhost:8080
 
 服务端会在开发环境打印 ChatClient 发给模型的 Prompt 和模型返回的响应，日志级别配置在 `application.yml` 中。
 
+如果要运行 RAG 章节，还需要启动本地 Milvus 和 OpenSearch，并配置 DashScope Embedding：
+
+```bash
+export RAG_EMBEDDING_API_BASE="你的 DashScope 兼容接口地址"
+export RAG_EMBEDDING_API_KEY="你的 DashScope Key"
+export RAG_EMBEDDING_MODEL="text-embedding-v4"
+export RAG_EMBEDDING_DIMENSIONS="1024"
+export RAG_MILVUS_CHUNKS_COLLECTION="rag_tutorial_chunks"
+export RAG_OPENSEARCH_INDEX="rag_tutorial_chunks"
+```
+
+RAG 页面：
+
+```text
+http://localhost:8080/rag.html
+```
+
+完整配置、启动检查和常见问题见 [`05-rag/README.md`](./05-rag/README.md)。
+
 也可以使用命令行调用：
 
 同步返回完整结果：
@@ -105,8 +124,8 @@ curl -N "http://localhost:8080/ai/chat/stream?message=用三句话介绍 Spring 
 | [02-prompt](./02-prompt) | Prompt 工程 | `system()`、`user()`、模板、Few-shot、约束 | ✅ |
 | [03-structured-output](./03-structured-output) | 结构化输出 | JSON、Java Bean、`entity()`、异常处理、字段校验 | ✅ |
 | [04-chat-memory](./04-chat-memory) | 多轮对话 | Memory、会话 ID、窗口管理、Redis | ✅ |
-| 05-embedding-vector-store | 向量基础 | Embedding、文档切分、VectorStore、PGVector | 🚧 |
-| 06-rag | RAG 知识库 | 检索、Query 改写、引用、效果评估 | 🚧 |
+| [05-rag](./05-rag) | RAG 知识库 | Tika、Embedding、Milvus、OpenSearch、混合检索、Rerank | ✅ |
+| 06-production-rag | RAG 进阶 | Query 改写、引用、过滤、效果评估 | 🚧 |
 | 07-tool-calling | Tool Calling | `@Tool`、业务 API、权限和人工确认 | 🚧 |
 | 08-multimodal | 多模态 | 图片、音频、文本转语音、模型切换 | 🚧 |
 | 09-ai-engineering | AI 工程化 | 缓存、限流、重试、成本和安全 | 🚧 |
@@ -153,9 +172,9 @@ return chatClient.prompt()       // 创建模型请求
 
 ## 🛠️ 技术栈
 
-`Java 21` · `Spring Boot 4` · `Spring AI 2` · `Maven` · `DeepSeek`
+`Java 21` · `Spring Boot 4` · `Spring AI 2` · `Maven` · `DeepSeek` · `Milvus` · `OpenSearch` · `Redis`
 
-后续会加入 `PostgreSQL`、`PGVector`、`Redis`、`Docker` 和更多模型提供商。
+后续会加入更完整的生产级 RAG、权限过滤、评测、Docker 部署和更多模型提供商。
 
 > 本项目通过 Spring AI 的 OpenAI 兼容接口接入 DeepSeek。API Key 仅从环境变量读取，请勿提交到 Git。
 

@@ -41,6 +41,7 @@
             <option value="structured">结构化输出模式</option>
             <option value="structured-safe">结构化输出（异常处理）</option>
             <option value="validated">结构化输出（字段校验）</option>
+            <option value="retry">结构化输出（自动重试）</option>
         </select>
         <input id="message-input" placeholder="例如：什么是 Spring AI？" autocomplete="off">
         <button id="send-button" type="submit">发送</button>
@@ -91,12 +92,14 @@
                                     ? `/ai/structured-output/safe?topic=${encodeURIComponent(question)}`
                                     : mode === 'validated'
                                         ? `/ai/structured-output/validated?topic=${encodeURIComponent(question)}`
+                                        : mode === 'retry'
+                                            ? `/ai/structured-output/retry?topic=${encodeURIComponent(question)}`
                         : `/ai/chat/stream?message=${encodeURIComponent(question)}`;
             const response = await fetch(endpoint);
             if (!response.ok || !response.body) throw new Error(`请求失败：${response.status}`);
 
             // Prompt 教师和结构化输出接口是同步接口，直接显示完整文本。
-            if (mode === 'prompt' || mode === 'structured' || mode === 'structured-safe' || mode === 'validated') {
+            if (mode === 'prompt' || mode === 'structured' || mode === 'structured-safe' || mode === 'validated' || mode === 'retry') {
                 const text = await response.text();
                 try {
                     // JSON 结果格式化显示，便于观察 Java 对象的字段结构。

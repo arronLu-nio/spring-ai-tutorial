@@ -142,6 +142,36 @@ if (!violations.isEmpty()) {
 
 页面中选择“结构化输出（字段校验）”即可体验。
 
+## 4. 失败重试
+
+Spring AI 可以在 JSON Schema 校验失败后，把具体错误反馈给模型并自动重新请求：
+
+```java
+JavaConcept result = chatClient.prompt()
+        .user("请解释这个概念：" + topic)
+        .call()
+        // 默认最多重试 3 次；需要完整响应，不支持 stream()
+        .entity(JavaConcept.class, spec -> spec.validateSchema());
+```
+
+调用接口：
+
+```bash
+curl "http://localhost:8080/ai/structured-output/retry?topic=Flux"
+```
+
+页面中选择“结构化输出（自动重试）”即可体验。
+
+重试流程：
+
+```text
+模型返回
+   ↓
+Schema 校验
+   ├── 通过 → 返回 JavaConcept
+   └── 失败 → 把错误反馈给模型 → 再次请求
+```
+
 ## 关键 API
 
 | API | 作用 |

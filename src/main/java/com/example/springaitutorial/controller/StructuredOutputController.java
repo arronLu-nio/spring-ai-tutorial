@@ -94,4 +94,25 @@ public class StructuredOutputController {
             ));
         }
     }
+
+    @GetMapping("/ai/structured-output/retry")
+    public ResponseEntity<?> explainWithRetry(@RequestParam String topic) {
+        try {
+            JavaConcept result = chatClient.prompt()
+                    .system("请用中文解释 Java 或 Spring 概念，内容要适合初学者。")
+                    .user("请解释这个概念：" + topic)
+                    .call()
+                    // validateSchema：校验 JSON Schema，失败时把错误反馈给模型并自动重试。
+                    // 默认最多重试 3 次；该模式需要完整响应，不支持 stream()。
+                    .entity(JavaConcept.class, spec -> spec.validateSchema());
+
+            return ResponseEntity.ok(result);
+        } catch (Exception exception) {
+            log.error("结构化输出重试后仍然失败，topic={}", topic, exception);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "STRUCTURED_OUTPUT_RETRY_EXHAUSTED",
+                    "message", "AI 多次尝试后仍未返回有效结构，请稍后重试"
+            ));
+        }
+    }
 }

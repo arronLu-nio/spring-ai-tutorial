@@ -3,6 +3,8 @@ package com.example.springaitutorial.controller;
 import com.example.springaitutorial.model.JavaConcept;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.StructuredOutputValidationAdvisor;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -109,6 +111,34 @@ public class StructuredOutputController {
             return ResponseEntity.ok(result);
         } catch (Exception exception) {
             log.error("结构化输出重试后仍然失败，topic={}", topic, exception);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "STRUCTURED_OUTPUT_RETRY_EXHAUSTED",
+                    "message", "AI 多次尝试后仍未返回有效结构，请稍后重试"
+            ));
+        }
+    }
+
+    @GetMapping("/ai/structured-output/retry/custom")
+    public ResponseEntity<?> explainWithCustomRetry(@RequestParam String topic) {
+        var converter = new BeanOutputConverter<>(JavaConcept.class);
+        var validationAdvisor = StructuredOutputValidationAdvisor.builder()
+                .outputJsonSchema(converter.getJsonSchema())
+                // 显式设置最多重试 5 次，而不是使用默认值 3 次
+                .maxRepeatAttempts(5)
+                .build();
+
+        try {
+            JavaConcept result = chatClient.prompt()
+                    // 为本次请求添加自定义 Schema 校验 Advisor
+                    .advisors(validationAdvisor)
+                    .system("请用中文解释 Java 或 Spring 概念，内容要适合初学者。")
+                    .user("请解释这个概念：" + topic)
+                    .call()
+                    .entity(converter);       // 使用同一个转换器完成 JSON → Java 对象
+
+            return ResponseEntity.ok(result);
+        } catch (Exception exception) {
+            log.error("自定义重试后仍然失败，topic={}", topic, exception);
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", "STRUCTURED_OUTPUT_RETRY_EXHAUSTED",
                     "message", "AI 多次尝试后仍未返回有效结构，请稍后重试"

@@ -172,6 +172,34 @@ Schema 校验
    └── 失败 → 把错误反馈给模型 → 再次请求
 ```
 
+## 5. 自定义重试次数
+
+如果默认的 3 次不适合业务，可以手动创建校验 Advisor：
+
+```java
+var converter = new BeanOutputConverter<>(JavaConcept.class);
+var validationAdvisor = StructuredOutputValidationAdvisor.builder()
+        .outputJsonSchema(converter.getJsonSchema())
+        .maxRepeatAttempts(5)
+        .build();
+
+JavaConcept result = chatClient.prompt()
+        .advisors(validationAdvisor)
+        .user("请解释这个概念：" + topic)
+        .call()
+        .entity(converter);
+```
+
+调用接口：
+
+```bash
+curl "http://localhost:8080/ai/structured-output/retry/custom?topic=Flux"
+```
+
+页面中选择“结构化输出（自定义重试）”即可体验。
+
+重试次数不是越多越好。每次重试都会再次消耗模型调用次数和 Token，生产环境需要在可靠性和成本之间做平衡。
+
 ## 关键 API
 
 | API | 作用 |

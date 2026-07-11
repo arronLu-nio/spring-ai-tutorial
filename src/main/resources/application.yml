@@ -1,6 +1,16 @@
 spring:
   application:
     name: spring-ai-tutorial
+  cloud:
+    nacos:
+      config:
+        # Nacos 控制台映射在 http://localhost:18080，客户端地址不带 /nacos。
+        server-addr: localhost:18080
+        group: DEFAULT_GROUP
+        refresh-enabled: true
+  config:
+    # 使用 Spring Cloud Alibaba 2025.x 推荐的 spring.config.import 方式。
+    import: optional:nacos:spring-ai-tutorial.properties?group=DEFAULT_GROUP&refreshEnabled=true
   data:
     redis:
       host: ${REDIS_HOST:localhost}

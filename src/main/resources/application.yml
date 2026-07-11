@@ -26,7 +26,8 @@ spring:
         client:
           host: ${RAG_MILVUS_HOST:localhost}
           port: ${RAG_MILVUS_PORT:19530}
-        collection-name: ${RAG_MILVUS_CHUNKS_COLLECTION:rag_chunks}
+        # 教程使用独立集合，避免与已有企业 RAG 集合 rag_chunks 的 schema 冲突。
+        collection-name: ${RAG_MILVUS_CHUNKS_COLLECTION:rag_tutorial_chunks}
         embedding-dimension: ${RAG_EMBEDDING_DIMENSIONS:1024}
         initialize-schema: true
     openai:
@@ -54,7 +55,8 @@ server:
 
 rag:
   opensearch-url: ${RAG_OPENSEARCH_URL:http://127.0.0.1:9200}
-  opensearch-index: ${RAG_OPENSEARCH_INDEX:rag_chunks}
+  # 教程使用独立索引，避免读取已有企业 RAG 索引的不同字段结构。
+  opensearch-index: ${RAG_OPENSEARCH_INDEX:rag_tutorial_chunks}
   min-retrieval-score: ${RAG_MIN_RETRIEVAL_SCORE:0.2}
   hybrid-candidate-top-k: ${RAG_HYBRID_CANDIDATE_TOP_K:20}
   hybrid-rrf-k: ${RAG_HYBRID_RRF_K:60}

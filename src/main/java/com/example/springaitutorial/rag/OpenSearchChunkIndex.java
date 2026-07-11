@@ -85,14 +85,36 @@ public class OpenSearchChunkIndex {
         for (JsonNode hit : root.path("hits").path("hits")) {
             JsonNode source = hit.path("_source");
             hits.add(new LexicalHit(
-                    source.path("id").asText(hit.path("_id").asText()),
-                    source.path("content").asText(),
-                    source.path("source").asText(),
-                    hit.path("_score").asDouble(0),
-                    objectMapper.convertValue(source.path("metadata"), new TypeReference<>() {})
+                    textOrDefault(source, "id", textOrDefault(hit, "_id", "")),
+                    textOrDefault(source, "content", ""),
+                    textOrDefault(source, "source", ""),
+                    numberOrDefault(hit, "_score", 0),
+                    metadataOrEmpty(source)
             ));
         }
         return hits;
+    }
+
+    /**
+     * Jackson 3 对 MissingNode 调用 asText() 会抛异常，因此不能直接写
+     * source.path("field").asText(defaultValue)。先判断字段是否真的存在。
+     */
+    private String textOrDefault(JsonNode parent, String fieldName, String defaultValue) {
+        JsonNode value = parent == null ? null : parent.get(fieldName);
+        return value == null || value.isMissingNode() || value.isNull() ? defaultValue : value.asText();
+    }
+
+    private double numberOrDefault(JsonNode parent, String fieldName, double defaultValue) {
+        JsonNode value = parent == null ? null : parent.get(fieldName);
+        return value == null || value.isMissingNode() || value.isNull() ? defaultValue : value.asDouble();
+    }
+
+    private Map<String, Object> metadataOrEmpty(JsonNode source) {
+        JsonNode metadata = source == null ? null : source.get("metadata");
+        if (metadata == null || metadata.isMissingNode() || metadata.isNull()) {
+            return Map.of();
+        }
+        return objectMapper.convertValue(metadata, new TypeReference<>() {});
     }
 
     public record LexicalHit(String id, String content, String source, double score,

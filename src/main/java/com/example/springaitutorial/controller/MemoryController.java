@@ -28,6 +28,8 @@ public class MemoryController {
     public Flux<String> chat(@RequestParam String conversationId,
                              @RequestParam String message) {
         return chatClient.prompt()
+                // system message：定义整个会话的长期角色和回答规则
+                .system("你是一名耐心的 Java 和 Spring AI 老师，请使用简单的中文回答。")
                 .advisors(advisorSpec -> advisorSpec
                         // 把记忆 Advisor 加入本次请求
                         .advisors(memoryAdvisor)
@@ -38,4 +40,3 @@ public class MemoryController {
                 .content();
     }
 }
-

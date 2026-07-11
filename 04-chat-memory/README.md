@@ -8,6 +8,8 @@
 
 ```java
 return chatClient.prompt()
+        // SystemMessage：定义本次会话的角色和规则
+        .system("你是一名耐心的 Java 和 Spring AI 老师，请使用简单的中文回答。")
         .advisors(advisorSpec -> advisorSpec
                 // 加入记忆 Advisor
                 .advisors(memoryAdvisor)
@@ -76,3 +78,15 @@ public ChatMemory chatMemory() {
 - 旧信息影响当前回答
 
 页面中选择“Memory 多轮对话”，连续提问即可体验会话窗口。
+
+## 3. SystemMessage 和普通消息
+
+Memory 中常见的消息类型包括：
+
+```text
+SystemMessage     → 系统规则和角色
+UserMessage       → 用户问题
+AssistantMessage  → AI 回复
+```
+
+`SystemMessage` 不是用户提问，也不是 AI 回复，而是告诉模型“应该如何工作”。在窗口淘汰时，系统消息会被特殊保留，不会像普通历史消息一样随意删除。

@@ -28,4 +28,10 @@ public class RagController {
     public RagService.RagAnswer ask(@RequestParam String question) {
         return ragService.ask(question);
     }
+
+    @GetMapping("/api/rag/evaluate")
+    public RagService.Evaluation evaluate(@RequestParam String question,
+                                          @RequestParam String expectedSource) {
+        return ragService.evaluate(question, expectedSource);
+    }
 }

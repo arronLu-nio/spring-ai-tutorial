@@ -19,50 +19,100 @@ public class RagService {
     private final ChatClient chatClient;
     private final VectorStore milvus;
     private final OpenSearchChunkIndex openSearch;
+    private final QueryRewriteService queryRewriteService;
     private final DashScopeReranker reranker;
     private final RagProperties properties;
 
     public RagService(ChatClient.Builder chatClientBuilder,
                       VectorStore milvus,
                       OpenSearchChunkIndex openSearch,
+                      QueryRewriteService queryRewriteService,
                       DashScopeReranker reranker,
                       RagProperties properties) {
         this.chatClient = chatClientBuilder.build();
         this.milvus = milvus;
         this.openSearch = openSearch;
+        this.queryRewriteService = queryRewriteService;
         this.reranker = reranker;
         this.properties = properties;
     }
 
     public RagAnswer ask(String question) {
-        List<Document> dense = milvus.similaritySearch(SearchRequest.builder()
-                .query(question)
-                .topK(properties.getHybridCandidateTopK())
-                .similarityThreshold(properties.getMinRetrievalScore())
-                .build());
-        List<OpenSearchChunkIndex.LexicalHit> lexical = openSearch.search(
-                question, properties.getHybridCandidateTopK());
-
-        List<Document> fused = reciprocalRankFusion(dense, lexical);
-        List<Document> reranked = reranker.rerank(question, fused).stream().limit(6).toList();
-        String context = reranked.stream()
-                .map(document -> "来源：" + document.getMetadata().getOrDefault("source", "未知")
-                        + "\n" + document.getText())
-                .reduce((left, right) -> left + "\n\n---\n\n" + right)
-                .orElse("没有检索到相关资料。");
+        RetrievalResult retrieval = retrieve(question);
+        String context = numberedContext(retrieval.documents());
 
         String answer = chatClient.prompt()
-                .system("你是企业知识库问答助手。只能根据参考资料回答；资料不足时明确说不知道，不要编造。")
+                .system("""
+                        你是企业知识库问答助手。只能根据参考资料回答；资料不足时明确说不知道，不要编造。
+                        参考资料已经编号为 [1]、[2]……每个有资料支持的事实句末尾必须标注对应引用，例如 [1] 或 [1][2]。
+                        不要编造不存在的引用编号，也不要在没有资料支持时强行引用。
+                        """)
                 .user("参考资料：\n" + context + "\n\n用户问题：" + question)
                 .call()
                 .content();
 
-        return new RagAnswer(answer, reranked.stream()
-                .map(document -> new Source(
-                        String.valueOf(document.getMetadata().getOrDefault("source", "未知")),
-                        document.getText(),
-                        document.getScore()))
-                .toList());
+        return new RagAnswer(answer, toSources(retrieval.documents()));
+    }
+
+    /** 召回和重排由问答、效果评估共同使用。 */
+    public RetrievalResult retrieve(String question) {
+        // 只改写检索问题，最终回答仍然使用用户原问题，避免改变用户意图。
+        String retrievalQuery = queryRewriteService.rewrite(question);
+        List<Document> dense = milvus.similaritySearch(SearchRequest.builder()
+                .query(retrievalQuery)
+                .topK(properties.getHybridCandidateTopK())
+                .similarityThreshold(properties.getMinRetrievalScore())
+                .build());
+        List<OpenSearchChunkIndex.LexicalHit> lexical = openSearch.search(
+                retrievalQuery, properties.getHybridCandidateTopK());
+        List<Document> fused = reciprocalRankFusion(dense, lexical);
+        List<Document> reranked = reranker.rerank(question, fused).stream().limit(6).toList();
+        return new RetrievalResult(retrievalQuery, reranked);
+    }
+
+    private String numberedContext(List<Document> documents) {
+        if (documents.isEmpty()) {
+            return "没有检索到相关资料。";
+        }
+        StringBuilder context = new StringBuilder();
+        for (int i = 0; i < documents.size(); i++) {
+            Document document = documents.get(i);
+            context.append("[").append(i + 1).append("] 来源：")
+                    .append(document.getMetadata().getOrDefault("source", "未知"))
+                    .append("\n").append(document.getText());
+            if (i < documents.size() - 1) {
+                context.append("\n\n---\n\n");
+            }
+        }
+        return context.toString();
+    }
+
+    private List<Source> toSources(List<Document> documents) {
+        List<Source> sources = new ArrayList<>();
+        for (int i = 0; i < documents.size(); i++) {
+            Document document = documents.get(i);
+            sources.add(new Source(
+                    i + 1,
+                    String.valueOf(document.getMetadata().getOrDefault("source", "未知")),
+                    document.getText(),
+                    document.getScore()));
+        }
+        return sources;
+    }
+
+    public Evaluation evaluate(String question, String expectedSource) {
+        RetrievalResult retrieval = retrieve(question);
+        int rank = 0;
+        for (int i = 0; i < retrieval.documents().size(); i++) {
+            Object source = retrieval.documents().get(i).getMetadata().get("source");
+            if (expectedSource.equals(String.valueOf(source))) {
+                rank = i + 1;
+                break;
+            }
+        }
+        return new Evaluation(question, retrieval.retrievalQuery(), expectedSource,
+                rank > 0, rank == 0 ? 0 : 1.0 / rank,
+                toSources(retrieval.documents()));
     }
 
     private List<Document> reciprocalRankFusion(List<Document> dense,
@@ -100,6 +150,9 @@ public class RagService {
         private double score() { return score; }
     }
 
+    public record RetrievalResult(String retrievalQuery, List<Document> documents) {}
     public record RagAnswer(String answer, List<Source> sources) {}
-    public record Source(String source, String content, Double score) {}
+    public record Source(int citation, String source, String content, Double score) {}
+    public record Evaluation(String question, String retrievalQuery, String expectedSource,
+                             boolean hit, double reciprocalRank, List<Source> sources) {}
 }

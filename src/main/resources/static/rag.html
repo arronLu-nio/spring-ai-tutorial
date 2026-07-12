@@ -44,6 +44,17 @@
         <h3>参考来源</h3>
         <div id="sources"></div>
     </section>
+
+    <section>
+        <h2>3. 检索效果评估</h2>
+        <p class="muted">输入测试问题和正确答案所在的文件名，检查召回是否命中。</p>
+        <form id="evaluate-form">
+            <input id="eval-question" type="text" placeholder="测试问题" required>
+            <input id="expected-source" type="text" placeholder="期望来源文件名" required>
+            <button type="submit">评估召回</button>
+        </form>
+        <pre id="evaluation"></pre>
+    </section>
 </main>
 <script>
     document.querySelector('#upload-form').onsubmit = async event => {
@@ -70,9 +81,18 @@
         (result.sources || []).forEach(source => {
             const element = document.createElement('div');
             element.className = 'source';
-            element.textContent = `[${source.source}]\n${source.content}`;
+            element.textContent = `[${source.citation}] ${source.source}\n${source.content}`;
             sources.appendChild(element);
         });
+    };
+
+    document.querySelector('#evaluate-form').onsubmit = async event => {
+        event.preventDefault();
+        const question = document.querySelector('#eval-question').value.trim();
+        const expectedSource = document.querySelector('#expected-source').value.trim();
+        const response = await fetch(`/api/rag/evaluate?question=${encodeURIComponent(question)}&expectedSource=${encodeURIComponent(expectedSource)}`);
+        const result = await response.json();
+        document.querySelector('#evaluation').textContent = JSON.stringify(result, null, 2);
     };
 </script>
 </body>

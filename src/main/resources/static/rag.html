@@ -35,7 +35,9 @@
 
     <section>
         <h2>2. 知识库问答</h2>
+        <p class="muted">同一个会话 ID 会读取 Redis 中的历史对话，支持“刚才提到的那个”等上下文问题。</p>
         <form id="ask-form">
+            <input id="conversation-id" type="text" value="rag-demo" placeholder="会话 ID" required>
             <input id="question" type="text" placeholder="例如：公司的报销流程是什么？" required>
             <button type="submit">检索并回答</button>
         </form>
@@ -72,8 +74,9 @@
 
     document.querySelector('#ask-form').onsubmit = async event => {
         event.preventDefault();
+        const conversationId = document.querySelector('#conversation-id').value.trim();
         const question = document.querySelector('#question').value.trim();
-        const response = await fetch(`/api/rag/ask?question=${encodeURIComponent(question)}`);
+        const response = await fetch(`/api/rag/chat?conversationId=${encodeURIComponent(conversationId)}&question=${encodeURIComponent(question)}`);
         const result = await response.json();
         document.querySelector('#answer').textContent = result.answer || result.message || '暂无回答';
         const sources = document.querySelector('#sources');

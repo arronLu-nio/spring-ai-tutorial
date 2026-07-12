@@ -19,6 +19,9 @@ public class RagProperties {
     private double minRerankScore = 0.5;
     private String uploadDirectory = "data/uploads";
     private long uploadMaxBytes = 20 * 1024 * 1024;
+    private int timeoutSeconds = 20;
+    private int maxRetries = 2;
+    private int queryCacheTtlSeconds = 300;
 
     public String getOpensearchUrl() { return opensearchUrl; }
     public void setOpensearchUrl(String opensearchUrl) { this.opensearchUrl = opensearchUrl; }
@@ -44,4 +47,10 @@ public class RagProperties {
     public void setUploadDirectory(String value) { this.uploadDirectory = value; }
     public long getUploadMaxBytes() { return uploadMaxBytes; }
     public void setUploadMaxBytes(long value) { this.uploadMaxBytes = value; }
+    public int getTimeoutSeconds() { return timeoutSeconds; }
+    public void setTimeoutSeconds(int value) { this.timeoutSeconds = value; }
+    public int getMaxRetries() { return maxRetries; }
+    public void setMaxRetries(int value) { this.maxRetries = value; }
+    public int getQueryCacheTtlSeconds() { return queryCacheTtlSeconds; }
+    public void setQueryCacheTtlSeconds(int value) { this.queryCacheTtlSeconds = value; }
 }

@@ -157,6 +157,67 @@ curl --get http://localhost:8080/api/rag/evaluate \
 
 实际项目会准备一组“问题 + 正确来源”的测试集，批量统计 Hit@K、MRR 和回答正确率，而不是只评估一个问题。
 
+## 第六章预备：带上下文的 RAG 对话
+
+新增接口：
+
+```bash
+curl --get http://localhost:8080/api/rag/chat \
+  --data-urlencode "conversationId=rag-demo" \
+  --data-urlencode "question=刚才提到的线程池拒绝策略怎么选择？"
+```
+
+这个接口会从 Redis 读取最近 6 条消息：
+
+```text
+Redis 历史消息
+  ↓
+QueryRewriteService 补全“刚才提到的”
+  ↓
+Milvus + OpenSearch 检索
+  ↓
+带引用回答
+  ↓
+保存本轮 UserMessage 和 AssistantMessage
+```
+
+原来的 `/api/rag/ask` 仍然是无状态接口，适合单次查询和评测。
+
+## 生产优化案例：企业知识库问答保护层
+
+当前示例把多个生产知识点放在一次问答中：
+
+```text
+Query 改写
+  ↓ 命中 Redis 缓存？——是——> 直接复用
+  ↓ 否
+模型调用：20 秒超时，最多重试 2 次
+  ↓ 仍然失败
+回退到用户原问题
+  ↓
+RAG 检索和 Rerank
+  ↓ Rerank 失败或超时：回退到 RRF 结果
+  ↓
+最终回答调用失败：返回安全的降级提示
+```
+
+配置项：
+
+```properties
+RAG_TIMEOUT_SECONDS=20
+RAG_MAX_RETRIES=2
+RAG_QUERY_CACHE_TTL_SECONDS=300
+```
+
+代码位置：
+
+- `RagResilienceService`：统一超时、重试和降级
+- `QueryRewriteService`：Redis 缓存改写结果
+- `DashScopeReranker`：Rerank 失败回退到混合检索结果
+- `RagService`：最终回答失败时返回安全提示
+
+生产环境还应把 `CompletableFuture` 使用的线程池改成受控线程池，并区分可重试错误和不可重试错误，例如参数错误不应该反复重试。
+
 ### 1. `The field: id is not provided`
 
 通常是因为复用了已有的 Milvus 集合。Spring AI 默认集合字段是 `doc_id`、`content`、`metadata` 和 `embedding`，而企业 RAG 集合可能使用 `id`、`text`、`tenant_id` 等不同字段。

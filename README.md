@@ -125,7 +125,7 @@ curl -N "http://localhost:8080/ai/chat/stream?message=用三句话介绍 Spring 
 | [03-structured-output](./03-structured-output) | 结构化输出 | JSON、Java Bean、`entity()`、异常处理、字段校验 | ✅ |
 | [04-chat-memory](./04-chat-memory) | 多轮对话 | Memory、会话 ID、窗口管理、Redis | ✅ |
 | [05-rag](./05-rag) | RAG 知识库 | Tika、Embedding、Milvus、OpenSearch、混合检索、Rerank、引用和评估 | ✅ |
-| 06-production-rag | RAG 进阶 | 多轮上下文、权限过滤、评测集和生产优化 | 🚧 |
+| [06-production-rag](./06-production-rag) | RAG 进阶 | 多轮上下文、缓存、超时、重试、降级、版本管理 | 🚧 |
 | [07-tool-calling](./07-tool-calling) | Tool Calling | `@Tool`、工具调用链、ToolMessage、权限校验 | ✅ |
 | 08-multimodal | 多模态 | 图片、音频、文本转语音、模型切换 | 🚧 |
 | 09-ai-engineering | AI 工程化 | 缓存、限流、重试、成本和安全 | 🚧 |

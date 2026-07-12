@@ -19,9 +19,11 @@ public class DashScopeReranker {
 
     private final RestClient client = RestClient.builder().build();
     private final RagProperties properties;
+    private final RagResilienceService resilience;
 
-    public DashScopeReranker(RagProperties properties) {
+    public DashScopeReranker(RagProperties properties, RagResilienceService resilience) {
         this.properties = properties;
+        this.resilience = resilience;
     }
 
     public List<Document> rerank(String query, List<Document> candidates) {
@@ -30,6 +32,10 @@ public class DashScopeReranker {
             return candidates;
         }
 
+        return resilience.execute("rerank", () -> doRerank(query, candidates), () -> candidates);
+    }
+
+    private List<Document> doRerank(String query, List<Document> candidates) {
         try {
             List<String> documents = candidates.stream().map(Document::getText).toList();
             JsonNode root = client.post()

@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -17,23 +21,29 @@ import org.springframework.stereotype.Service;
 public class RagService {
 
     private final ChatClient chatClient;
+    private final ChatMemory chatMemory;
     private final VectorStore milvus;
     private final OpenSearchChunkIndex openSearch;
     private final QueryRewriteService queryRewriteService;
     private final DashScopeReranker reranker;
+    private final RagResilienceService resilience;
     private final RagProperties properties;
 
     public RagService(ChatClient.Builder chatClientBuilder,
+                      ChatMemory chatMemory,
                       VectorStore milvus,
                       OpenSearchChunkIndex openSearch,
                       QueryRewriteService queryRewriteService,
                       DashScopeReranker reranker,
+                      RagResilienceService resilience,
                       RagProperties properties) {
         this.chatClient = chatClientBuilder.build();
+        this.chatMemory = chatMemory;
         this.milvus = milvus;
         this.openSearch = openSearch;
         this.queryRewriteService = queryRewriteService;
         this.reranker = reranker;
+        this.resilience = resilience;
         this.properties = properties;
     }
 
@@ -41,7 +51,7 @@ public class RagService {
         RetrievalResult retrieval = retrieve(question);
         String context = numberedContext(retrieval.documents());
 
-        String answer = chatClient.prompt()
+        String answer = generateAnswer(() -> chatClient.prompt()
                 .system("""
                         你是企业知识库问答助手。只能根据参考资料回答；资料不足时明确说不知道，不要编造。
                         参考资料已经编号为 [1]、[2]……每个有资料支持的事实句末尾必须标注对应引用，例如 [1] 或 [1][2]。
@@ -49,15 +59,58 @@ public class RagService {
                         """)
                 .user("参考资料：\n" + context + "\n\n用户问题：" + question)
                 .call()
-                .content();
+                .content(), "无资料时无法生成回答，请稍后重试。", "answer");
 
         return new RagAnswer(answer, toSources(retrieval.documents()));
     }
 
+    /**
+     * 带会话上下文的 RAG：历史消息只用于补全当前问题和辅助最终回答，
+     * 真正检索仍然使用改写后的独立问题。
+     */
+    public RagAnswer ask(String conversationId, String question) {
+        List<Message> history = chatMemory.get(conversationId);
+        String historyText = formatRecentHistory(history);
+        RetrievalResult retrieval = retrieve(conversationId, question, historyText);
+        String context = numberedContext(retrieval.documents());
+
+        String answer = generateAnswer(() -> chatClient.prompt()
+                .system("""
+                        你是企业知识库问答助手。只能根据参考资料回答；资料不足时明确说不知道，不要编造。
+                        可以参考最近对话理解省略指代，但最终事实必须来自参考资料。
+                        参考资料已经编号为 [1]、[2]……每个有资料支持的事实句末尾必须标注对应引用。
+                        """)
+                .user("最近对话：\n" + historyText
+                        + "\n\n参考资料：\n" + context
+                        + "\n\n当前问题：" + question)
+                .call()
+                .content(), "无资料时无法生成回答，请稍后重试。", "answer-with-memory");
+
+        // RAG 对话不使用 ChatClient Advisor，回答完成后手动保存这一轮消息。
+        chatMemory.add(conversationId, List.of(
+                new UserMessage(question),
+                new AssistantMessage(answer)));
+        return new RagAnswer(answer, toSources(retrieval.documents()));
+    }
+
+    private String generateAnswer(java.util.function.Supplier<String> action,
+                                  String fallback,
+                                  String operation) {
+        return resilience.execute(operation, action, () -> fallback);
+    }
+
     /** 召回和重排由问答、效果评估共同使用。 */
     public RetrievalResult retrieve(String question) {
+        return retrieve(question, "");
+    }
+
+    private RetrievalResult retrieve(String question, String historyText) {
+        return retrieve("stateless", question, historyText);
+    }
+
+    private RetrievalResult retrieve(String conversationId, String question, String historyText) {
         // 只改写检索问题，最终回答仍然使用用户原问题，避免改变用户意图。
-        String retrievalQuery = queryRewriteService.rewrite(question);
+        String retrievalQuery = queryRewriteService.rewrite(conversationId, question, historyText);
         List<Document> dense = milvus.similaritySearch(SearchRequest.builder()
                 .query(retrievalQuery)
                 .topK(properties.getHybridCandidateTopK())
@@ -68,6 +121,20 @@ public class RagService {
         List<Document> fused = reciprocalRankFusion(dense, lexical);
         List<Document> reranked = reranker.rerank(question, fused).stream().limit(6).toList();
         return new RetrievalResult(retrievalQuery, reranked);
+    }
+
+    private String formatRecentHistory(List<Message> history) {
+        if (history == null || history.isEmpty()) {
+            return "无";
+        }
+        int start = Math.max(0, history.size() - 6);
+        StringBuilder result = new StringBuilder();
+        for (int i = start; i < history.size(); i++) {
+            Message message = history.get(i);
+            result.append(message.getMessageType()).append("：")
+                    .append(message.getText()).append("\n");
+        }
+        return result.toString().trim();
     }
 
     private String numberedContext(List<Document> documents) {

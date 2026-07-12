@@ -29,6 +29,12 @@ public class RagController {
         return ragService.ask(question);
     }
 
+    @GetMapping("/api/rag/chat")
+    public RagService.RagAnswer chat(@RequestParam String conversationId,
+                                     @RequestParam String question) {
+        return ragService.ask(conversationId, question);
+    }
+
     @GetMapping("/api/rag/evaluate")
     public RagService.Evaluation evaluate(@RequestParam String question,
                                           @RequestParam String expectedSource) {

@@ -8,19 +8,43 @@
 上传文件
   ↓
 Tika 解析文本
-  ↓
+    ↓
 TokenTextSplitter 切分
-  ↓
+    ↓
 DashScope Embedding
-  ↓
+    ↓
 Milvus 向量检索 + OpenSearch BM25 检索
   ↓
 RRF 融合
   ↓
 DashScope Rerank（可选）
-  ↓
+    ↓
 DeepSeek 根据参考资料回答
 ```
+
+## Query 改写
+
+用户问题经常不适合直接检索，例如：
+
+```text
+用户：刚才说的那个怎么配置？
+```
+
+系统会先调用一次大模型，把它改写成包含完整主题的查询，再把改写结果交给 Milvus 和 OpenSearch：
+
+```text
+用户问题
+  ↓
+QueryRewriteService
+  ↓
+适合检索的查询
+  ↓
+Milvus + OpenSearch
+  ↓
+使用原问题生成最终回答
+```
+
+对应代码：`QueryRewriteService`。改写失败或返回空内容时，会自动回退到原问题。
 
 ## 启动前检查
 
@@ -116,6 +140,22 @@ curl --get http://localhost:8080/api/rag/ask \
 - `RagController`：上传和问答接口
 
 ## 常见问题
+
+## 引用优化与效果评估
+
+回答使用 `[1]`、`[2]` 标记参考资料，接口返回的 `sources[].citation` 与回答中的编号一一对应。这样前端可以把回答中的引用对应到具体切片，而不是只展示一组没有对应关系的来源。
+
+评估接口：
+
+```bash
+curl --get http://localhost:8080/api/rag/evaluate \
+  --data-urlencode "question=线程池有哪些拒绝策略？" \
+  --data-urlencode "expectedSource=juc-interview-question.md"
+```
+
+返回的 `hit` 表示期望来源是否进入召回结果，`reciprocalRank` 是倒数排名：第一名命中为 `1.0`，第二名命中为 `0.5`，没有命中为 `0`。
+
+实际项目会准备一组“问题 + 正确来源”的测试集，批量统计 Hit@K、MRR 和回答正确率，而不是只评估一个问题。
 
 ### 1. `The field: id is not provided`
 
